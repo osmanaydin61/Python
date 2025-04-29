@@ -2,87 +2,136 @@ import psutil
 import boto3
 import time
 import platform
+import json
 import matplotlib.pyplot as plt
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import subprocess
+import os
+from datetime import datetime, timedelta
 
-# AWS CloudWatch için Log Grup ve Log Stream Tanımları
-LOG_GROUP = "SunucuPerformansLoglari"  # Özel karakter olmamalı
+
+LOG_GROUP = "SunucuPerformansLoglari"
 LOG_STREAM = "EC2_Instance_Log"
-
-# AWS CloudWatch bağlantısı
 client = boto3.client('logs')
 
-# Performans verilerini al
-import psutil
-import platform
+def should_send_email():
+    """Son e-postadan bu yana 10 dakika geçtiyse True döner."""
+    status_file = "/tmp/last_alert_time.txt"
 
-import psutil
-import platform
+    if os.path.exists(status_file):
+        with open(status_file, "r") as f:
+            last_time_str = f.read().strip()
+            try:
+                last_time = datetime.strptime(last_time_str, "%Y-%m-%d %H:%M:%S")
+                if datetime.now() - last_time < timedelta(minutes=10):
+                    return False
+            except:
+                pass
+
+    with open(status_file, "w") as f:
+        f.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    return True
+
+# 📧 E-posta uyarı fonksiyonu
+def send_email_alert(subject, body):
+    sender = "losmanaydin61@gmail.com"
+    receiver = "losmanayin61@gmail.com"
+    password = "vhyp hhrz ujuf indw"
+
+    msg = MIMEMultipart()
+    msg['From'] = sender
+    msg['To'] = receiver
+    msg['Subject'] = subject
+    msg.attach(MIMEText(body, 'plain'))
+
+    try:
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            server.starttls()
+            server.login(sender, password)
+            server.sendmail(sender, receiver, msg.as_string())
+        print("📧 E-posta gönderildi!")
+    except Exception as e:
+        print("E-posta gönderim hatası:", e)
+
+# 🔧 Yüksek CPU kullanan işlemleri bul
+def find_high_cpu_processes(threshold=80.0):
+    result = subprocess.run(['ps', '-eo', 'pid,pcpu,comm', '--sort=-pcpu'], stdout=subprocess.PIPE)
+    output = result.stdout.decode('utf-8').splitlines()[1:]  # Başlığı atla
+    processes = []
+    for line in output:
+        try:
+            pid, cpu, cmd = line.strip().split(None, 2)
+            if float(cpu) >= threshold:
+                processes.append((pid, cpu, cmd))
+        except:
+            continue
+    return processes
 
 def get_system_metrics():
-    metrics = {
+    return {
         "CPU Usage": psutil.cpu_percent(),
         "RAM Usage": psutil.virtual_memory().percent,
         "Disk Usage": psutil.disk_usage('/').percent,
         "Network Sent (MB)": psutil.net_io_counters().bytes_sent / (1024 * 1024),
-        "Network Received (MB)": psutil.net_io_counters().bytes_recv / (1024 * 1024),
-        
+        "Network Received (MB)": psutil.net_io_counters().bytes_recv / (1024 * 1024)
     }
 
-    
-    
-    return metrics
-
-import json
-
-# CloudWatch'a veri gönder
-import time
-
-def send_to_cloudwatch():
-    """Ölçüm verilerini CloudWatch'a JSON formatında gönderir."""
-    log_entry = {  # Liste yerine direkt sözlük oluştur
+def send_to_cloudwatch(metrics):
+    log_entry = {
         "timestamp": int(time.time() * 1000),
-        "message": json.dumps({  # JSON string formatına çevir
-            "CPU Usage": psutil.cpu_percent(),
-            "RAM Usage": psutil.virtual_memory().percent,
-            "Disk Usage": psutil.disk_usage('/').percent,
-            "Network Sent (MB)": psutil.net_io_counters().bytes_sent / (1024 * 1024),
-            "Network Received (MB)": psutil.net_io_counters().bytes_recv / (1024 * 1024)
-        })
+        "message": json.dumps(metrics)
     }
 
     try:
-        response = client.put_log_events(
+        client.put_log_events(
             logGroupName=LOG_GROUP,
             logStreamName=LOG_STREAM,
-            logEvents=[log_entry]  # ← Burada liste içinde tek bir dict olmalı!
-    )
-        print("Log başarıyla CloudWatch'a gönderildi:", response)
+            logEvents=[log_entry]
+        )
+        print("☁️ CloudWatch'a log gönderildi.")
     except Exception as e:
-        print("Hata oluştu:", e)
+        print("CloudWatch gönderim hatası:", e)
 
-# Performans verilerini grafikle göster
-def plot_metrics():
-    metrics = get_system_metrics()
-    
+def check_and_alert(metrics):
+    alerts = []
+    if metrics["CPU Usage"] > 80:
+        alerts.append("⚠️ CPU kullanımı yüksek: {:.2f}%".format(metrics["CPU Usage"]))
+    if metrics["RAM Usage"] > 85:
+        alerts.append("⚠️ RAM kullanımı yüksek: {:.2f}%".format(metrics["RAM Usage"]))
+    if metrics["Disk Usage"] > 90:
+        alerts.append("⚠️ Disk kullanımı yüksek: {:.2f}%".format(metrics["Disk Usage"]))
+
+    if alerts:
+        print("\n".join(alerts))
+
+        if should_send_email():
+            processes = find_high_cpu_processes()
+            process_info = "\n".join(f"PID: {p[0]} | CPU: {p[1]}% | Process: {p[2]}" for p in processes)
+            body = "\n".join(alerts) + "\n\n🔍 Yüksek CPU kullanan işlemler:\n" + process_info
+            send_email_alert("Sunucu Uyarısı", body)
+        else:
+            print("📫 Uyarı gönderilmedi: 10 dakikalık sınır aktif.")
+
+
+def plot_metrics(metrics):
     labels = list(metrics.keys())
-    values = [v if v is not None else 0 for v in metrics.values()]  # None değerlerini sıfır yap
-    
+    values = [metrics[k] if metrics[k] is not None else 0 for k in labels]
+
     plt.figure(figsize=(10, 5))
     plt.bar(labels, values, color=['blue', 'green', 'red', 'purple', 'orange'])
-    
     plt.xlabel("Metrikler")
     plt.ylabel("Değerler")
     plt.title("Sunucu Performans Metrikleri")
     plt.xticks(rotation=45)
     plt.grid(axis="y")
-
-    plt.savefig("plot.png")  # 📌 Grafik dosyasını kaydet
-    print("Grafik başarıyla kaydedildi: plot.png")
-
-plot_metrics()
-
-
+    plt.savefig("plot.png")
+    print("📊 Grafik kaydedildi: plot.png")
 
 if __name__ == "__main__":
-    send_to_cloudwatch()
-    plot_metrics()
+    metrics = get_system_metrics()
+    send_to_cloudwatch(metrics)
+    check_and_alert(metrics)
+    plot_metrics(metrics)
+    

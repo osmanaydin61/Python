@@ -2,12 +2,45 @@ import boto3
 from datetime import datetime, timedelta, UTC
 import subprocess
 import matplotlib.pyplot as plt
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
-# CloudWatch'tan CPU kullanımını çekme (son 10 veri)
+# E-Posta gönderme fonksiyonu
+def send_email_alert(cpu_value):
+    sender_email = "losmanaydin61@gmail.com"
+    receiver_email = "losmanaydin61@gmail.com"
+    app_password = "vhyp hhrz ujuf indw"
+
+    subject = "🚨 Yüksek CPU Kullanımı Uyarısı!"
+    body = f"""
+    Sunucuda CPU kullanımı çok yüksek! ⚠️
+
+    Şu anki CPU kullanım oranı: {cpu_value}%
+    Lütfen kontrol et!
+
+    Bu mesaj otomatik olarak sistem izleyici tarafından gönderildi.
+    """
+
+    message = MIMEMultipart()
+    message["From"] = sender_email
+    message["To"] = receiver_email
+    message["Subject"] = subject
+    message.attach(MIMEText(body, "plain"))
+
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(sender_email, app_password)
+            server.sendmail(sender_email, receiver_email, message.as_string())
+        print("📧 Uyarı e-postası gönderildi.")
+    except Exception as e:
+        print(f"❌ E-posta gönderimi başarısız: {e}")
+
+# CloudWatch'tan CPU verisi alma
 def get_cpu_utilization(instance_id):
     cloudwatch = boto3.client('cloudwatch')
     end_time = datetime.now(UTC)
-    start_time = end_time - timedelta(minutes=15)  # Zaman aralığını daralttık
+    start_time = end_time - timedelta(minutes=60)
 
     response = cloudwatch.get_metric_data(
         MetricDataQueries=[
@@ -17,14 +50,9 @@ def get_cpu_utilization(instance_id):
                     'Metric': {
                         'Namespace': 'AWS/EC2',
                         'MetricName': 'CPUUtilization',
-                        'Dimensions': [
-                            {
-                                'Name': 'InstanceId',
-                                'Value': instance_id
-                            },
-                        ]
+                        'Dimensions': [{'Name': 'InstanceId', 'Value': instance_id}]
                     },
-                    'Period': 30,  # 30 saniyelik veri çek
+                    'Period': 60,
                     'Stat': 'Average'
                 },
                 'ReturnData': True
@@ -32,52 +60,33 @@ def get_cpu_utilization(instance_id):
         ],
         StartTime=start_time,
         EndTime=end_time,
-        ScanBy='TimestampDescending',  # En yeni verileri önce getir
-        MaxDatapoints=20  # Daha fazla veri al, çünkü eski veri gelmiş olabilir
+        ScanBy='TimestampDescending',
+        MaxDatapoints=10
     )
+    return response['MetricDataResults'][0]['Values']
 
-    if 'MetricDataResults' in response and response['MetricDataResults']:
-        cpu_usage = response['MetricDataResults'][0].get('Values', [])
-        print(f"📊 CloudWatch'tan Güncellenmiş CPU Verileri: {cpu_usage}")
-        return cpu_usage
-    else:
-        print("❌ CloudWatch'tan CPU verisi alınamadı!")
-        return []
-
-
-    #return response['MetricDataResults'][0]['Values']
-
-# Yüksek CPU kullanan işlemleri bulma
-
+# Yüksek CPU kullanan işlemler
 def find_high_cpu_processes():
-    result = subprocess.run(['top', '-b', '-n', '1'], stdout=subprocess.PIPE, text=True)
-    output = result.stdout.split("\n")
-
+    result = subprocess.run(['ps', 'aux', '--sort=-%cpu'], stdout=subprocess.PIPE)
+    output = result.stdout.decode('utf-8')
+    lines = output.split('\n')[1:]
     processes = []
-    for line in output:
+    for line in lines:
         parts = line.split()
-
-        # 🔹 İlk sütun PID olmalı ve sayısal olmalı
-        if len(parts) < 9 or not parts[0].isdigit():
-            continue  # Geçersiz satırları atla
-
-        try:
-            pid = int(parts[0])  # PID sayıya çevrildi
-            cpu_usage = float(parts[8])  # CPU % değeri alındı
-
-            if cpu_usage > 50.0:  # %50'den fazla CPU kullanan işlemleri ekleyelim
-                processes.append((pid, cpu_usage))
-        
-        except ValueError:
-            continue  # Eğer hata olursa satırı atla
-
+        if len(parts) > 2:
+            try:
+                cpu_usage = float(parts[2])
+                pid = parts[1]
+                if cpu_usage > 50.0:
+                    processes.append((pid, cpu_usage))
+            except ValueError:
+                continue
     return processes
 
-
-# Rapor oluşturma
+# Grafik çizme
 def create_cpu_report(cpu_usage):
     plt.figure()
-    plt.plot(cpu_usage, label="CPU Kullanımı (%)")
+    plt.plot(cpu_usage[::-1], marker='o', label="CPU Kullanımı (%)")  # Yeni veriler en sona
     plt.xlabel("Zaman")
     plt.ylabel("Kullanım Oranı (%)")
     plt.legend()
@@ -86,26 +95,29 @@ def create_cpu_report(cpu_usage):
 
 # Ana fonksiyon
 def main():
-    instance_id = "i-0d355e17b8947e5cc"  # EC2 örneğinizin ID'si
+    instance_id = "i-0d355e17b8947e5cc"  # EC2 ID’ni yaz
     cpu_usage = get_cpu_utilization(instance_id)
+    print(f"📊 CloudWatch CPU verisi: {cpu_usage}")
 
-    if not cpu_usage:  # Eğer veri yoksa
-        print("CloudWatch'tan CPU kullanım verisi alınamadı.")
+    if not cpu_usage:
+        print("❌ CloudWatch'tan veri alınamadı.")
         return
-    # Tüm değerleri float'a çevir ve yazdır
-    cpu_usage = [float(x) for x in cpu_usage]
-    print(f"CPU Kullanım Değerleri: {cpu_usage}")
 
-    if max(cpu_usage) > 80.0:
-        print("Yüksek CPU kullanımı tespit edildi!")
+    latest_cpu = cpu_usage[0]
+    print(f"🔍 Son CPU değeri: {latest_cpu}")
+
+    if latest_cpu > 80.0:
+        print("🔥 Yüksek CPU kullanımı tespit edildi!")
+        send_email_alert(latest_cpu)
+
         high_cpu_processes = find_high_cpu_processes()
         for pid, usage in high_cpu_processes:
-            print(f"PID: {pid}, CPU Kullanımı: {usage}%")
-        
+            print(f"⚠️ PID: {pid}, CPU: {usage}%")
+
         create_cpu_report(cpu_usage)
-        print("Rapor oluşturuldu: cpu_report.png")
+        print("📈 Grafik oluşturuldu: cpu_report.png")
     else:
-        print("CPU kullanımı normal.")
+        print("✅ CPU kullanımı normal.")
 
 if __name__ == "__main__":
     main()
