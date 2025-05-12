@@ -96,9 +96,9 @@ def send_to_cloudwatch(metrics):
 
 def check_and_alert(metrics):
     alerts = []
-    if metrics["CPU Usage"] > 80:
+    if metrics["CPU Usage"] > 95:
         alerts.append("⚠️ CPU kullanımı yüksek: {:.2f}%".format(metrics["CPU Usage"]))
-    if metrics["RAM Usage"] > 85:
+    if metrics["RAM Usage"] > 95:
         alerts.append("⚠️ RAM kullanımı yüksek: {:.2f}%".format(metrics["RAM Usage"]))
     if metrics["Disk Usage"] > 90:
         alerts.append("⚠️ Disk kullanımı yüksek: {:.2f}%".format(metrics["Disk Usage"]))
