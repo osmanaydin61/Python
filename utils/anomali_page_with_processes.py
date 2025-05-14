@@ -1,17 +1,15 @@
 
-# routes/anomaly.py — Anomali tespiti ve grafik gösterimi
-from flask import Blueprint, render_template_string
-from auth import login_required
-from metrics_recorder import record_metrics
-from anomaly_detector import detect_anomalies
-import os
+from flask import Flask, render_template_string
 import pandas as pd
+import os
+from utils.anomaly_detector import detect_anomalies
+from utils.metrics_recorder import record_metrics
 
-anomaly_routes = Blueprint("anomaly", __name__)
+app = Flask(__name__, static_folder='static')
 
-@anomaly_routes.route("/anomali")
-@login_required
+@app.route("/anomali")
 def anomali():
+    # Kayıt + anomali hesapla
     record_metrics()
     detect_anomalies()
 
@@ -42,3 +40,6 @@ def anomali():
         {{ yorum | safe }}
         <a href='/'>⬅ Ana Sayfaya Dön</a>
     """, yorum=yorum)
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8080)

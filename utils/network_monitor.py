@@ -1,6 +1,6 @@
 
 import psutil
-from logger import log_event
+from utils.logger import log_event
 
 def check_network_usage():
     log_event("🌐 Ağ trafiği kontrolü başlatıldı.")

@@ -2,7 +2,7 @@
 # routes/disk.py — Disk temizleme işlemleri
 from flask import Blueprint, redirect, url_for
 from auth import login_required, roles_required
-from clean_disk_utils import clean_disk
+from utils.clean_disk_utils import clean_disk
 
 disk_routes = Blueprint("disk", __name__)
 last_freed_space = 0

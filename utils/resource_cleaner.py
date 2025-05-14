@@ -2,7 +2,7 @@
 import psutil
 import os
 import subprocess
-from logger import log_event
+from utils.logger import log_event
 
 def clean_ram(top_n=3):
     log_event("🔍 RAM kontrolü başlatıldı.")

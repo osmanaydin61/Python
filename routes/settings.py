@@ -4,15 +4,17 @@ from flask import Blueprint, render_template_string, request, redirect, url_for
 from auth import login_required, roles_required
 
 settings_routes = Blueprint("settings", __name__)
-cpu_threshold = 80
-ram_threshold = 85
-disk_threshold = 90
+cpu_threshold = 90
+ram_threshold = 90
+disk_threshold = 99
 email_recipient = "ornek@example.com"
+alarm_enabled = True
+aggressive_mode = False
 
-@settings_routes.route("/ayarlar", methods=["GET", "POST"])
+@settings_routes.route("/settings", methods=["GET", "POST"])
 @login_required
 @roles_required('admin')
-def ayarlar():
+def settings():
     global cpu_threshold, ram_threshold, disk_threshold, email_recipient, alarm_enabled, aggressive_mode
     if request.method == "POST":
         cpu_threshold = int(request.form["cpu"])
@@ -21,7 +23,7 @@ def ayarlar():
         email_recipient = request.form["email"]
         alarm_enabled = "alarm" in request.form
         aggressive_mode = "aggressive" in request.form
-        return redirect(url_for("ayarlar"))
+        return redirect(url_for("settings"))
     return render_template_string("""
         <h2>⚙️ Alarm Ayarları</h2>
         <form method='post'>

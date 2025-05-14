@@ -1,10 +1,13 @@
-
-# routes/tavsiye.py — Tavsiye sistemi (işlem önerileri)
 from flask import Blueprint, render_template_string
 from auth import login_required
 import psutil
 
 tavsiye_routes = Blueprint("tavsiye", __name__)
+
+# Eşik değerler
+cpu_threshold = 90
+ram_threshold = 90
+disk_threshold = 90
 
 @tavsiye_routes.route("/tavsiye")
 @login_required
@@ -46,8 +49,8 @@ def tavsiye():
         for pid, name, ram_use in high_ram_processes:
             tavsiye += f"- {name} (PID: {pid}) → {ram_use:.2f}% RAM<br>"
 
-    return render_template_string(f"""
+    return render_template_string("""
         <h2>🧠 Sistem Yorum ve Öneri</h2>
-        <p>{tavsiye}</p>
+        <p>{{ tavsiye | safe }}</p>
         <a href='/'>⬅ Geri dön</a>
-    """)
+    """, tavsiye=tavsiye)

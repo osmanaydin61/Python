@@ -3,7 +3,7 @@ import psutil
 import matplotlib.pyplot as plt
 from datetime import datetime
 import os
-from logger import log_event
+from utils.logger import log_event
 
 def generate_system_graphs():
     log_event("📊 Sistem grafikleri oluşturuluyor...")
