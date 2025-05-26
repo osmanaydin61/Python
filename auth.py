@@ -5,8 +5,8 @@ auth_routes = Blueprint("auth", __name__)
 
 # Kullanıcı verisi
 users = {
-    'admin@example.com': {'password': 'admin123', 'role': 'admin'},
-    'readonly@example.com': {'password': 'readonly123', 'role': 'readonly'}
+    'osmanaydin2016@yandex.com': {'password': 'admin123', 'role': 'admin'},
+    'readonly@gmail.com': {'password': 'read123', 'role': 'readonly'}
 }
 
 # Giriş kontrolü

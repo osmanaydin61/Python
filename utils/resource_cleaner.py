@@ -3,20 +3,15 @@ import psutil
 import os
 import subprocess
 from utils.logger import log_event
+import time
+def clean_ram():
+    # RAM temizleme simülasyonu
+    before = psutil.virtual_memory().available
+    time.sleep(1)  # Simülasyon
+    after = psutil.virtual_memory().available
+    freed = max((after - before) / (1024*1024), 0)
+    return round(freed, 2)
 
-def clean_ram(top_n=3):
-    log_event("🔍 RAM kontrolü başlatıldı.")
-    processes = [(p.pid, p.info['name'], p.info['memory_info'].rss)
-                 for p in psutil.process_iter(['name', 'memory_info']) if p.info['memory_info']]
-    processes.sort(key=lambda x: x[2], reverse=True)
-
-    for pid, name, memory in processes[:top_n]:
-        try:
-            log_event(f"⚠️ Yüksek RAM kullanan işlem: {name} (PID: {pid}) - {memory / (1024 ** 2):.2f} MB")
-            # İsteğe bağlı olarak sonlandır:
-            # psutil.Process(pid).terminate()
-        except Exception as e:
-            log_event(f"Hata RAM işleminde: {e}", level="error")
 
 def clean_disk():
     log_event("🧹 Disk temizliği başlatıldı.")

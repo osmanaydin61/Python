@@ -1,4 +1,4 @@
-from flask import Flask, redirect, url_for, render_template_string
+from flask import Flask, jsonify,request, redirect, url_for
 from auth import auth_routes, login_required, roles_required
 from routes.dashboard import dashboard_routes
 from routes.disk import disk_routes
@@ -6,27 +6,17 @@ from routes.settings import settings_routes
 from routes.anomaly import anomaly_routes
 from routes.tavsiye import tavsiye_routes
 from utils.network_monitor import check_network_usage
-from utils.graph_generator import generate_system_graphs
 from utils.resource_cleaner import clean_ram
-from utils.clean_disk_utils import clean_disk
-from utils.metrics_recorder import record_metrics
-from utils.anomaly_detector import detect_anomalies
 from cloudwatch.CloudWatch import send_email_alert
-import os
+from utils.anomaly_detector import detect_and_log_anomaly
+import subprocess
 import psutil
+import time
+import threading
+import random
 import pandas as pd
-
-app = Flask(__name__, static_folder='static')
+app = Flask(__name__)
 app.secret_key = 'gizli_anahtar'
-
-# Global sistem ayarları
-cpu_threshold = 90
-ram_threshold = 90
-disk_threshold = 90
-alarm_enabled = True
-email_recipient = "ornek@example.com"
-aggressive_mode = False
-last_freed_space = 0
 
 # Blueprint kayıtları
 app.register_blueprint(auth_routes)
@@ -35,51 +25,56 @@ app.register_blueprint(disk_routes)
 app.register_blueprint(settings_routes)
 app.register_blueprint(anomaly_routes)
 app.register_blueprint(tavsiye_routes)
+anomaly_records = []
+metrics = {"cpu": 0, "ram": 0, "disk": 0}
 
-@app.route("/clean")
+def background_thread():
+    global metrics, anomaly_records
+    while True:
+        cpu = psutil.cpu_percent(interval=1)
+        ram = psutil.virtual_memory().percent
+        disk = psutil.disk_usage('/').percent
+
+        metrics = {"cpu": cpu, "ram": ram, "disk": disk}
+        anomaly = detect_and_log_anomaly(cpu, ram, disk)
+        if anomaly:
+            anomaly_records.append(anomaly)
+
+        time.sleep(2)
+        
+@app.route("/killprocess", methods=["POST"])
 @login_required
 @roles_required("admin")
-def clean():
-    clean_ram()
-    return redirect(url_for("dashboard.home"))
+def kill_process():
+    process_name = request.form.get("process")
+    if process_name:
+        try:
+            subprocess.call(['pkill', '-f', process_name])
 
-@app.route("/logs")
-@login_required
-def logs():
-    try:
-        with open("logs/events.log", "r") as f:
-            content = f.read().replace("\n", "<br>")
-    except FileNotFoundError:
-        content = "Log dosyası bulunamadı."
-    return f"<h2>📜 Loglar</h2><p>{content}</p><a href='/'>⬅ Geri dön</a>"
+            # CSV'den anomaliyi sil
+            df = pd.read_csv("metrics_history.csv")
+            df = df[~df['top_cpu_processes'].str.contains(process_name, na=False)]
+            df.to_csv("metrics_history.csv", index=False)
 
-@app.route("/network")
-@login_required
-def network():
-    from io import StringIO
-    import sys
+            return jsonify({"message": f"✅ {process_name} işlemi sonlandırıldı ve anomali kaydı silindi."})
+        except Exception as e:
+            return jsonify({"message": f"❌ Hata: {str(e)}"})
+    return jsonify({"message": "❌ Process adı bulunamadı."})
 
-    old_stdout = sys.stdout
-    result = StringIO()
-    sys.stdout = result
 
-    check_network_usage()
+@app.route("/metrics")
+def get_metrics():
+    return jsonify(metrics)
+@app.context_processor
+def inject_helpers():
+    import random
+    return dict(random=random.random, zip=zip)
 
-    sys.stdout = old_stdout
-    output = result.getvalue().replace("\n", "<br>")
-    return f"<h2>🌐 Ağ Kullanımı</h2><p>{output}</p><a href='/'>⬅ Geri dön</a>"
-
-@app.route("/testmail")
-@login_required
-def testmail():
-    try:
-        if alarm_enabled:
-            send_email_alert("🔔 Test Mail", f"Bu bir test mesajıdır. Alıcı: {email_recipient}")
-            return "<p>✅ Test mail gönderildi.</p><a href='/'>⬅ Geri dön</a>"
-        else:
-            return "<p>⚠️ Alarm sistemi devre dışı.</p><a href='/'>⬅ Geri dön</a>"
-    except Exception as e:
-        return f"<p>❌ Mail gönderilemedi: {str(e)}</p><a href='/'>⬅ Geri dön</a>"
+@app.context_processor
+def inject_random():
+    import random
+    return dict(random=random.random)
 
 if __name__ == "__main__":
+    threading.Thread(target=background_thread, daemon=True).start()
     app.run(host="0.0.0.0", port=8080)

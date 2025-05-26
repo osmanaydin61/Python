@@ -15,7 +15,7 @@ def generate_system_graphs():
     disk = psutil.disk_usage('/')
 
     # Grafiklerin kaydedileceği klasör
-    static_dir = os.path.join(os.path.dirname(__file__), "static")
+    static_dir = os.path.join(os.path.dirname(__file__), "../static")
     os.makedirs(static_dir, exist_ok=True)
 
     # CPU Grafiği
