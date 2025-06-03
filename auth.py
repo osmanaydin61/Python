@@ -43,13 +43,84 @@ def login():
         else:
             error = "❌ Geçersiz e-posta veya şifre."
     return render_template_string("""
-        <h2>🔐 Giriş Yap</h2>
-        <form method='post'>
-            E-posta: <input type='email' name='email'><br><br>
-            Şifre: <input type='password' name='password'><br><br>
-            <button type='submit'>Giriş Yap</button>
-        </form>
-        <p style='color:red;'>{{ error }}</p>
+        <!DOCTYPE html>
+        <html lang="tr">
+        <head>
+            <meta charset="UTF-8">
+            <title>Giriş Yap</title>
+            <style>
+                body {
+                    margin: 0;
+                    padding: 0;
+                    font-family: Arial, sans-serif;
+                    background: linear-gradient(135deg, #4c6ef5, #b197fc);
+                    height: 100vh;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                }
+                .login-container {
+                    background: white;
+                    padding: 40px;
+                    border-radius: 12px;
+                    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+                    width: 350px;
+                    text-align: center;
+                }
+                .login-container h2 {
+                    margin-bottom: 20px;
+                    font-size: 28px;
+                    color: #4c6ef5;
+                }
+                .login-container input[type="email"],
+                .login-container input[type="password"] {
+                    width: 100%;
+                    padding: 12px;
+                    margin: 8px 0 20px;
+                    border: 1px solid #ccc;
+                    border-radius: 8px;
+                    font-size: 16px;
+                }
+                .login-container button {
+                    width: 100%;
+                    padding: 12px;
+                    background-color: #4c6ef5;
+                    border: none;
+                    color: white;
+                    font-size: 18px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    transition: background 0.3s;
+                }
+                .login-container button:hover {
+                    background-color: #3b5bdb;
+                }
+                .login-container .lock-icon {
+                    font-size: 40px;
+                    color: #4c6ef5;
+                    margin-bottom: 10px;
+                }
+                .error-message {
+                    color: red;
+                    margin-top: 10px;
+                    font-weight: bold;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="login-container">
+                <h2>OptiGuard Yönetim Paneli</h2>
+                <form method="POST">
+                    <input type="email" name="email" placeholder="E-posta" required>
+                    <input type="password" name="password" placeholder="Şifre" required>
+                    <button type="submit">Giriş Yap</button>
+                </form>
+                {% if error %}
+                    <p class="error-message">{{ error }}</p>
+                {% endif %}
+            </div>
+        </body>
+        </html>
     """, error=error)
 
 # Çıkış işlemi

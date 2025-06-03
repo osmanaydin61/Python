@@ -1,33 +1,20 @@
-
 import psutil
 import os
-import subprocess
-from utils.logger import log_event
-import time
+import signal
+
 def clean_ram():
-    # RAM temizleme simülasyonu
-    before = psutil.virtual_memory().available
-    time.sleep(1)  # Simülasyon
-    after = psutil.virtual_memory().available
-    freed = max((after - before) / (1024*1024), 0)
-    return round(freed, 2)
+    threshold = 20.0  # %20'den fazla RAM kullananlar kapatılacak
+    killed = []
 
+    for proc in psutil.process_iter(['pid', 'name', 'memory_percent']):
+        try:
+            if proc.info['memory_percent'] > threshold:
+                os.kill(proc.info['pid'], signal.SIGKILL)
+                killed.append(f"{proc.info['name']} (PID: {proc.info['pid']}) - %{proc.info['memory_percent']:.1f}")
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
 
-def clean_disk():
-    log_event("🧹 Disk temizliği başlatıldı.")
-    try:
-        # Geçici dosyaları temizleme
-        os.system("rm -rf /tmp/*")
-        os.system("rm -rf ~/.cache/*")
-        os.system("sudo apt-get clean")
-
-        # Disk kullanımını göster
-        usage = psutil.disk_usage('/')
-        log_event(f"💾 Disk kullanımı: {usage.percent}%")
-
-    except Exception as e:
-        log_event(f"Hata disk temizliğinde: {e}", level="error")
-
-if __name__ == "__main__":
-    clean_ram()
-    clean_disk()
+    if killed:
+        return f"✅ RAM temizlendi. Kapatılanlar: " + ", ".join(killed)
+    else:
+        return "✅ Kapatılacak işlem yok."

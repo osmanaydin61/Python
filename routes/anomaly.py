@@ -65,7 +65,7 @@ def anomaly():
         <p>✅ Şu anda anomali bulunmuyor.</p>
     {% endif %}
 
-    <a href="/">⬅ Ana Sayfaya Dön</a>
+    <a href="/">⬅ Geri Dön</a>
 
 <script>
     const labels = [];
@@ -100,7 +100,10 @@ def anomaly():
             cpuData.push(data.cpu);
             ramData.push(data.ram);
             diskData.push(data.disk);
-
+            chart.data.labels = labels;
+            chart.data.datasets[0].data = cpuData;
+            chart.data.datasets[1].data = ramData;
+            chart.data.datasets[2].data = diskData;
             if (labels.length > 20) { labels.shift(); cpuData.shift(); ramData.shift(); diskData.shift(); }
             chart.update();
 

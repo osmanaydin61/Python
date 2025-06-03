@@ -1,56 +1,184 @@
-from flask import Blueprint, render_template_string
-from auth import login_required
-import psutil
+from flask import Blueprint, render_template_string, request, redirect, url_for, session
+import pandas as pd
+import os
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 tavsiye_routes = Blueprint("tavsiye", __name__)
+TAVSIYE_FILE = "tavsiyeler.csv"
+CEVAP_FILE = "cevaplar.csv"
 
-# Eşik değerler
-cpu_threshold = 90
-ram_threshold = 90
-disk_threshold = 90
-
-@tavsiye_routes.route("/tavsiye")
-@login_required
+@tavsiye_routes.route("/tavsiye", methods=["GET", "POST"])
 def tavsiye():
-    cpu = psutil.cpu_percent(interval=1)
-    ram = psutil.virtual_memory().percent
-    disk = psutil.disk_usage('/').percent
+    # Tavsiye Gönderme (readonly)
+    if request.method == "POST" and request.form.get("mode") == "tavsiye":
+        user = session.get("user", "Anonim")
+        tavsiye_metni = request.form.get("tavsiye")
+        timestamp = datetime.now(ZoneInfo("Europe/Istanbul")).strftime("%Y-%m-%d %H:%M:%S")
+        new_entry = pd.DataFrame([[user, tavsiye_metni, timestamp]], columns=["user", "tavsiye", "timestamp"])
 
-    high_cpu_processes = [(p.info['pid'], p.info['name'], p.info['cpu_percent'])
-                          for p in psutil.process_iter(['pid', 'name', 'cpu_percent']) if p.info['cpu_percent'] > 30]
-    high_ram_processes = [(p.info['pid'], p.info['name'], p.info['memory_percent'])
-                          for p in psutil.process_iter(['pid', 'name', 'memory_percent']) if p.info['memory_percent'] > 30]
+        if os.path.exists(TAVSIYE_FILE):
+            df = pd.read_csv(TAVSIYE_FILE)
+            df = pd.concat([df, new_entry], ignore_index=True)
+        else:
+            df = new_entry
+        df.to_csv(TAVSIYE_FILE, index=False)
+        return redirect(url_for("tavsiye.tavsiye"))
 
-    tavsiye = "🧠 Sistem Durumu Analizi:<br><br>"
+    # Admin Cevaplama
+    if request.method == "POST" and request.form.get("mode") == "cevap":
+        if session.get("user") != "osmanaydin2016@yandex.com":
+            return "Yetkisiz işlem."
+        user = request.form.get("user")
+        tavsiye_text = request.form.get("tavsiye")
+        timestamp = request.form.get("timestamp")
+        cevap = request.form.get("cevap")
+        cevap_timestamp = datetime.now(ZoneInfo("Europe/Istanbul")).strftime("%Y-%m-%d %H:%M:%S")
 
-    if cpu > cpu_threshold:
-        tavsiye += f"⚠️ CPU kullanımı yüksek: {cpu:.2f}%<br>"
+        # Cevabı kaydet
+        new_entry = pd.DataFrame([[user, tavsiye_text, cevap, timestamp, cevap_timestamp]],
+                                 columns=["user", "tavsiye", "cevap", "tavsiye_tarih", "cevap_tarih"])
+        if os.path.exists(CEVAP_FILE):
+            df = pd.read_csv(CEVAP_FILE)
+            df = pd.concat([df, new_entry], ignore_index=True)
+        else:
+            df = new_entry
+        df.to_csv(CEVAP_FILE, index=False)
+
+        # Tavsiyeyi sil
+        df_tavsiye = pd.read_csv(TAVSIYE_FILE)
+        df_tavsiye = df_tavsiye[~((df_tavsiye['user'] == user) & (df_tavsiye['tavsiye'] == tavsiye_text) & (df_tavsiye['timestamp'] == timestamp))]
+        df_tavsiye.to_csv(TAVSIYE_FILE, index=False)
+        return redirect(url_for("tavsiye.tavsiye"))
+
+    # Verileri hazırla
+    tavsiyeler = []
+    cevaplar = []
+    if os.path.exists(TAVSIYE_FILE):
+        tavsiyeler = pd.read_csv(TAVSIYE_FILE).to_dict(orient="records")
+
+    if os.path.exists(CEVAP_FILE):
+        df = pd.read_csv(CEVAP_FILE)
+    if session.get("user") == "osmanaydin2016@yandex.com":
+        cevaplar = df.to_dict(orient="records")  # Admin tüm cevapları görür
     else:
-        tavsiye += f"✅ CPU kullanımı normal: {cpu:.2f}%<br>"
+        user = session.get("user")
+        cevaplar = df[df['user'] == user].to_dict(orient="records")  # Sadece kendi cevaplarını görür
 
-    if ram > ram_threshold:
-        tavsiye += f"⚠️ RAM kullanımı yüksek: {ram:.2f}%<br>"
-    else:
-        tavsiye += f"✅ RAM kullanımı normal: {ram:.2f}%<br>"
 
-    if disk > disk_threshold:
-        tavsiye += f"⚠️ Disk doluluk oranı çok yüksek: {disk:.2f}%<br>"
-        tavsiye += f"<a href='/disktemizle' style='color:green;'>🧹 Şimdi Disk Temizle</a><br>"
-    else:
-        tavsiye += f"✅ Disk kullanımı normal: {disk:.2f}%<br>"
-
-    if high_cpu_processes:
-        tavsiye += "<br>🔍 Yüksek CPU kullanan işlemler:<br>"
-        for pid, name, cpu_use in high_cpu_processes:
-            tavsiye += f"- {name} (PID: {pid}) → {cpu_use:.2f}% CPU<br>"
-
-    if high_ram_processes:
-        tavsiye += "<br>🔍 Yüksek RAM kullanan işlemler:<br>"
-        for pid, name, ram_use in high_ram_processes:
-            tavsiye += f"- {name} (PID: {pid}) → {ram_use:.2f}% RAM<br>"
+    is_admin = session.get("user") == "osmanaydin2016@yandex.com"
 
     return render_template_string("""
-        <h2>🧠 Sistem Yorum ve Öneri</h2>
-        <p>{{ tavsiye | safe }}</p>
-        <a href='/'>⬅ Geri dön</a>
-    """, tavsiye=tavsiye)
+    <!DOCTYPE html>
+    <html lang="tr">
+    <head>
+        <meta charset="UTF-8">
+        <title>Tavsiye ve Cevaplar</title>
+        <style>
+            body {
+                background-color: #0f111a;
+                color: #e0e0e0;
+                font-family: monospace;
+                padding: 20px;
+            }
+            h1 {
+                color: #00adb5;
+                text-align: center;
+            }
+            textarea {
+                width: 100%;
+                height: 80px;
+                border-radius: 6px;
+                padding: 8px;
+                background-color: #1f1f1f;
+                border: 1px solid #00adb5;
+                color: white;
+            }
+            button {
+                margin-top: 10px;
+                padding: 8px 16px;
+                background: #00adb5;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+            button:hover {
+                background: #009baa;
+            }
+            .card {
+                background: #1f1f1f;
+                border: 1px solid #00adb5;
+                padding: 12px;
+                margin: 15px 0;
+                border-radius: 6px;
+            }
+            h2 {
+                color: #00adb5;
+                border-bottom: 1px solid #00adb5;
+                padding-bottom: 5px;
+                text-align: center;
+            }
+            a {
+                color: #00adb5;
+                text-decoration: none;
+                display: block;
+                text-align: center;
+                margin-top: 20px;
+            }
+            a:hover {
+                text-decoration: underline;
+            }
+            p {
+                margin: 8px 0;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>💡 Tavsiye ve Cevaplar</h1>
+
+        {% if not is_admin %}
+            <h2>💬 Tavsiyenizi Yazın</h2>
+            <form method="POST">
+                <input type="hidden" name="mode" value="tavsiye">
+                <textarea name="tavsiye" placeholder="Sistem ile ilgili tavsiyenizi yazın..." required></textarea><br>
+                <button type="submit">Gönder</button>
+            </form>
+        {% endif %}
+
+        {% if is_admin and tavsiyeler %}
+            <h2>📝 Gelen Tavsiyeler</h2>
+            {% for t in tavsiyeler %}
+                <div class="card">
+                    <p><strong>{{ t.user }}</strong> - {{ t.timestamp }}</p>
+                    <p>{{ t.tavsiye }}</p>
+                    <form method="POST">
+                        <input type="hidden" name="mode" value="cevap">
+                        <input type="hidden" name="user" value="{{ t.user }}">
+                        <input type="hidden" name="tavsiye" value="{{ t.tavsiye }}">
+                        <input type="hidden" name="timestamp" value="{{ t.timestamp }}">
+                        <textarea name="cevap" placeholder="Cevabınızı yazın..." required></textarea><br>
+                        <button type="submit">📩 Cevapla</button>
+                    </form>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <h2>📬 Admin Cevapları</h2>
+        {% if cevaplar %}
+            {% for c in cevaplar %}
+                <div class="card">
+                    <p><strong>{{ c.user }}</strong> ({{ c.tavsiye_tarih }})</p>
+                    <p>📝 Tavsiye: {{ c.tavsiye }}</p>
+                    <p>📩 Cevap: {{ c.cevap }}</p>
+                    <p>📅 Cevap Tarihi: {{ c.cevap_tarih }}</p>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>Henüz cevap yok.</p>
+        {% endif %}
+
+        <a href="/">⬅ Geri Dön</a>
+    </body>
+    </html>
+    """, tavsiyeler=tavsiyeler, cevaplar=cevaplar, is_admin=is_admin)

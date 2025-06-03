@@ -1,28 +1,31 @@
-import psutil
-import subprocess
 import os
+import shutil
 
-def clean_disk(aggressive=False):
-    before = psutil.disk_usage('/').free
+def clean_disk():
+    paths_to_clean = [
+        "/tmp",
+        "/var/tmp",
+        os.path.expanduser("~/.cache"),
+        os.path.expanduser("~/Downloads"),
+    ]
 
-    try:
-        subprocess.run(["find", "/tmp", "-type", "f", "-delete"], check=True)
-        subprocess.run(["find", "/tmp", "-type", "d", "-empty", "-delete"], check=True)
-    except Exception as e:
-        print("TMP temizliği hatası:", e)
+    size_freed = 0
 
-    if aggressive:
-        try:
-            subprocess.run(["journalctl", "--vacuum-size=100M"], check=True)
-        except Exception as e:
-            print("Journal temizliği hatası:", e)
+    for path in paths_to_clean:
+        if os.path.exists(path):
+            for root, dirs, files in os.walk(path):
+                for file in files:
+                    try:
+                        file_path = os.path.join(root, file)
+                        size_freed += os.path.getsize(file_path)
+                        os.remove(file_path)
+                    except Exception:
+                        continue
+                for dir in dirs:
+                    try:
+                        shutil.rmtree(os.path.join(root, dir))
+                    except Exception:
+                        continue
 
-        try:
-            subprocess.run(["apt-get", "clean"], check=True)
-            subprocess.run(["apt-get", "autoclean"], check=True)
-        except Exception as e:
-            print("APT temizliği hatası:", e)
-
-    after = psutil.disk_usage('/').free
-    freed_space = (after - before) / (1024 * 1024)
-    return round(freed_space, 2)
+    freed_space = round(size_freed / (1024 * 1024), 2)
+    return f"🧹 {freed_space} MB disk alanı temizlendi."
