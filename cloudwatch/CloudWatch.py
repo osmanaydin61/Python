@@ -10,7 +10,9 @@ from email.mime.multipart import MIMEMultipart
 import subprocess
 import os
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
 
+load_dotenv() # Bu satır .env dosyasındaki bilgileri yükler
 
 LOG_GROUP = "SunucuPerformansLoglari"
 LOG_STREAM = "EC2_Instance_Log"
@@ -35,14 +37,21 @@ def should_send_email():
     return True
 
 # 📧 E-posta uyarı fonksiyonu
-def send_email_alert(subject, body):
-    sender = "losmanaydin61@gmail.com"
-    receiver = "losmanayin61@gmail.com"
-    password = "vhyp hhrz ujuf indw"
+# E-posta uyarı fonksiyonu
+def send_email_alert(receiver_email, subject, body): # ALICI E-POSTAYI PARAMETRE OLARAK EKLEDİK
+    sender = "losmanaydin61@gmail.com"  # Bunu da .env'den alabilirsiniz: os.getenv("SENDER_EMAIL")
+    password = os.getenv("EMAIL_SENDER_PASSWORD")
+
+    if not password:
+        print("E-posta gönderim hatası: EMAIL_SENDER_PASSWORD ortam değişkeni ayarlanmamış.")
+        return
+    if not receiver_email: # Alıcı e-posta adresi var mı kontrol edelim
+        print("E-posta gönderim hatası: Alıcı e-posta adresi belirtilmemiş.")
+        return
 
     msg = MIMEMultipart()
     msg['From'] = sender
-    msg['To'] = receiver
+    msg['To'] = receiver_email # ARTIK PARAMETREDEN GELENİ KULLANIYORUZ
     msg['Subject'] = subject
     msg.attach(MIMEText(body, 'plain'))
 
@@ -50,10 +59,10 @@ def send_email_alert(subject, body):
         with smtplib.SMTP("smtp.gmail.com", 587) as server:
             server.starttls()
             server.login(sender, password)
-            server.sendmail(sender, receiver, msg.as_string())
-        print("📧 E-posta gönderildi!")
+            server.sendmail(sender, receiver_email, msg.as_string()) # BURAYI DA GÜNCELLEDİK
+        print(f"📧 E-posta {receiver_email} adresine gönderildi!")
     except Exception as e:
-        print("E-posta gönderim hatası:", e)
+        print(f"E-posta gönderim hatası ({receiver_email}):", e)
 
 # 🔧 Yüksek CPU kullanan işlemleri bul
 def find_high_cpu_processes(threshold=80.0):

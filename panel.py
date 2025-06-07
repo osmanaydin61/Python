@@ -1,3 +1,13 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
+import time
+import threading
+import pandas as pd
+import logging
+import getpass
+import psutil
+from flask_wtf.csrf import CSRFProtect
 from flask import Flask, jsonify, request, redirect, url_for
 from auth import auth_routes, login_required, roles_required
 from routes.dashboard import dashboard_routes
@@ -5,20 +15,18 @@ from routes.settings import settings_routes
 from routes.anomaly import anomaly_routes
 from routes.tavsiye import tavsiye_routes
 from routes.network_monitor import get_network_page, get_network_content
+from routes.logger import get_logs_page, get_logs_content,log_info
 from utils.resource_cleaner import clean_ram
 from utils.clean_disk_utils import clean_disk
 from cloudwatch.CloudWatch import send_email_alert
 from utils.anomaly_detector import detect_and_log_anomaly
-from routes.logger import get_logs_page, get_logs_content,log_info
-import psutil
-import time
-import threading
-import pandas as pd
-import logging
-import getpass
+
+
+
 app = Flask(__name__)
 app.secret_key = 'gizli_anahtar'
-
+app.config.from_object('config.Config')
+csrf = CSRFProtect(app)
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
@@ -28,7 +36,6 @@ app.register_blueprint(dashboard_routes)
 app.register_blueprint(settings_routes)
 app.register_blueprint(anomaly_routes)
 app.register_blueprint(tavsiye_routes)
-
 # Global veriler
 anomaly_records = []
 metrics = {"cpu": 0, "ram": 0, "disk": 0}
@@ -115,16 +122,21 @@ def disktemizle():
     log_info(result)
     return result
 
-# Test mail
+# panel.py (/testmail route'u için önerilen düzeltme)
 @app.route("/testmail")
 @login_required
 def testmail():
     try:
-        send_email_alert("🔔 Test Mail", "Bu bir test mesajıdır.")
+        # .env dosyasından varsayılan bir test alıcısı okuyabilirsiniz
+        # ya da doğrudan admin e-postasını kullanabilirsiniz.
+        test_recipient = os.getenv("ADMIN_USER_EMAIL") # Örneğin .env'deki admin e-postası
+        if not test_recipient:
+            return "<p>❌ Test alıcı e-postası yapılandırılmamış.</p><a href='/'>⬅ Geri dön</a>"
+
+        send_email_alert(test_recipient, "🔔 Panelden Test Mail", "Bu bir test mesajıdır.")
         return "<p>✅ Test mail gönderildi.</p><a href='/'>⬅ Geri dön</a>"
     except Exception as e:
         return f"<p>❌ Mail gönderilemedi: {str(e)}</p><a href='/'>⬅ Geri dön</a>"
-
 # Metrikler (JSON)
 @app.route("/metrics")
 def get_metrics():

@@ -1,0 +1,150 @@
+body {
+        background-color: #0f111a;
+        color: #ffffff;
+        font-family: monospace;
+        margin: 0;
+        padding: 20px;
+    }
+    h1 {
+        text-align: center;
+        color: #00adb5;
+        margin-bottom: 30px;
+    }
+    .chart-grid {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;   /* label’lar canvas’la aynı hizada başlasın */
+    gap: 30px;
+    margin-bottom: 40px;
+    }
+
+    .chart-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    }
+
+    .chart-label {
+    font-size: 20px;        /* istediğin büyüklük */
+    font-weight: bold;
+    color: #00adb5;
+    margin-bottom: 8px;
+    text-transform: uppercase; /* dilersen */
+    }
+
+    canvas {
+        width: 300px !important;
+        height: 200px !important;
+        background-color: #1f1f1f;
+        border: 1px solid #00adb5;
+        border-radius: 8px;
+    }
+
+    /* Ortak buton stili */
+    .btn {
+        border-radius: 8px;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+        font-weight: bold;
+        text-align: center;
+    }
+
+    /* Container (buton grubunun kendisi) */
+    .main-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;  /* butonları ortaya alır */
+        gap: 20px;
+        width: 100%;              /* tam genişlik */
+        margin: 0 auto 40px;      /* alttan boşluk, yatayda ortala */
+    }
+
+    /* Butonlar */
+    .main-buttons a {
+        border-radius: 8px;
+        transition: all 0.3s;
+        text-decoration: none;
+        font-weight: bold;
+        text-align: center;
+        background-color: #1f1f1f;
+        color: #00adb5;
+        padding: 20px 30px;
+        min-width: 200px;         /* butonun minimum genişliği */
+        border: 1px solid #00adb5;
+        font-size: 18px;
+    }
+
+    /* Hover etkisi */
+    .main-buttons a:hover {
+        background-color: #00adb5;
+        color: #0f111a;
+    }
+
+
+    /* Temizleme butonları */
+    .btn-clean {
+        /* .btn özellikleri */
+        border-radius: 8px;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+        font-weight: bold;
+        text-align: center;
+
+        background: linear-gradient(135deg, #6b5b95, #8e44ad);
+        border: 1px solid #5d3f7b;
+        color: #fff;
+        padding: 12px 24px;
+        font-size: 16px;
+    }
+    .btn-clean:hover {
+        background: linear-gradient(135deg, #8e44ad, #6b5b95);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+    }
+
+    .secondary-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 30px;
+    }
+
+    .logout-button {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background-color: #ff4444;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: bold;
+    }
+    .logout-button:hover {
+        background-color: #ff0000;
+    }
+
+    #popup {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0.8);
+        background: linear-gradient(135deg, #2c3e50, #34495e);
+        color: #fff;
+        padding: 30px 60px;
+        border-radius: 12px;
+        font-size: 22px;
+        z-index: 9999;
+        text-align: center;
+        box-shadow: 0 0 25px rgba(0,0,0,0.8);
+        border: 2px solid #00adb5;
+        opacity: 0;
+        transition: all 0.3s ease-in-out;
+    }
+    #popup.show {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }

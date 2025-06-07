@@ -1,0 +1,11 @@
+body { background-color: #121212; color: #f0f0f0; 
+    font-family: Arial, sans-serif; 
+    margin: 0; 
+    padding: 20px; 
+    text-align: center; 
+    }
+        .anomaly-card { border: 1px solid #444; border-radius: 10px; padding: 15px; margin: 20px auto; max-width: 800px; background-color: #1f1f1f; }
+        canvas { width: 850px !important; height: 500px !important; background-color: #1e1e1e; border: 1px solid #333; border-radius: 8px; margin: 20px auto; display: block; }
+        a { color: #00adb5; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        button { background-color: #ff4444; color: white; padding: 8px 16px; border: none; border-radius: 6px; margin-top: 10px; cursor: pointer; }

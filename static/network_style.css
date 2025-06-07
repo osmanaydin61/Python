@@ -1,0 +1,30 @@
+            body {
+                background-color: #0f111a;
+                color: #e0e0e0;
+                font-family: monospace;
+                padding: 20px;
+            }
+            h1 {
+                color: #00adb5;
+                text-align: center;
+            }
+            pre {
+                background-color: #1f1f1f;
+                padding: 15px;
+                border-radius: 6px;
+                max-height: 600px;
+                overflow-y: scroll;
+                border: 1px solid #00adb5;
+                line-height: 1.5;
+                font-size: 14px;
+            }
+            a {
+                color: #00adb5;
+                text-decoration: none;
+                display: block;
+                margin-top: 20px;
+                text-align: center;
+            }
+            a:hover {
+                text-decoration: underline;
+            }

@@ -1,66 +1,13 @@
+# routes/network_monitor.py
 import psutil
-import os
+from flask import render_template, request
 
 def get_network_page():
-    return f"""
-    <html>
-    <head>
-        <title>Ağ İzleme</title>
-        <style>
-            body {{
-                background-color: #0f111a;
-                color: #e0e0e0;
-                font-family: monospace;
-                padding: 20px;
-            }}
-            h1 {{
-                color: #00adb5;
-                text-align: center;
-            }}
-            pre {{
-                background-color: #1f1f1f;
-                padding: 15px;
-                border-radius: 6px;
-                max-height: 600px;
-                overflow-y: scroll;
-                border: 1px solid #00adb5;
-                line-height: 1.5;
-                font-size: 14px;
-            }}
-            a {{
-                color: #00adb5;
-                text-decoration: none;
-                display: block;
-                margin-top: 20px;
-                text-align: center;
-            }}
-            a:hover {{
-                text-decoration: underline;
-            }}
-        </style>
-    </head>
-    <body>
-        <h1>🌐 Ağ İzleme</h1>
-        <pre id="networkContent">Yükleniyor...</pre>
-        <a href="/">⬅ Geri dön</a>
-        <script>
-            function fetchNetwork() {{
-                fetch('/getnetwork')
-                    .then(response => response.text())
-                    .then(data => {{
-                        document.getElementById('networkContent').innerText = data;
-                    }});
-            }}
-            fetchNetwork();
-            setInterval(fetchNetwork, 3000);
-        </script>
-    </body>
-    </html>
-    """
+    # Bu route'un çalışması için templates/network_page.html dosyası olmalı
+        return render_template('network_page.html')
+   
 
 def get_network_content():
-    import psutil
-
     net_io = psutil.net_io_counters()
     interfaces = psutil.net_if_addrs()
     connections = psutil.net_connections()
@@ -97,4 +44,3 @@ def get_network_content():
         content.append("- Aktif bağlantı bulunamadı.")
 
     return "\n".join(content)
-

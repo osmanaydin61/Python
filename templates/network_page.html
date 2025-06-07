@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Ağ İzleme</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='network_style.css') }}">
+    </head>
+    <body>
+        <h1>🌐 Ağ İzleme</h1>
+        <pre id="networkContent">Yükleniyor...</pre>
+        <a href="/">⬅ Geri dön</a>
+        <script>
+            function fetchNetwork() {
+                fetch('/getnetwork')
+                    .then(response => response.text())
+                    .then(data => {
+                        document.getElementById('networkContent').innerText = data;
+                    });
+            }
+            fetchNetwork();
+            setInterval(fetchNetwork, 3000);
+        </script>
+    </body>
+    </html>

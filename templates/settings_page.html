@@ -1,0 +1,35 @@
+<html>
+    <head>
+        <title>Ayarlar</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='settings_style.css') }}">
+    </head>
+    <body>
+    <h1>⚙️ Ayarlar</h1>
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label>CPU Alarm Eşiği (%)</label>
+        <input type="number" name="cpu" value="{{ config_settings.cpu }}" required>
+
+        <label>RAM Alarm Eşiği (%)</label>
+        <input type="number" name="ram" value="{{ config_settings.ram }}" required>
+
+        <label>Disk Alarm Eşiği (%)</label>
+        <input type="number" name="disk" value="{{ config_settings.disk }}" required>
+
+        <label>E-posta Adresi</label>
+        <input type="email" name="email" value="{{ config_settings.email }}" required>
+
+        <label><input type="checkbox" name="alarm" {% if config_settings.alarm %}checked{% endif %}> Alarm Aktif</label>
+        <label><input type="checkbox" name="aggressive" {% if config_settings.aggressive %}checked{% endif %}> Otomatik Müdahale</label>
+
+        <button type="submit">Kaydet</button>
+        <button type="submit" name="testmail" class="testmail">📨 Test Mail Gönder</button>
+    </form>
+
+    {% if message %} {# message değişkeni varsa göster #}
+        <p class="message-feedback {% if '❌' in message %}error{% endif %}">{{ message }}</p>
+    {% endif %}
+
+    <a href="{{ url_for('dashboard.home') }}" class="geri-don-link">⬅ Geri Dön</a>
+    </body>
+    </html>

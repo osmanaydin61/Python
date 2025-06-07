@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Canlı Loglar</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='logs_style.css') }}">
+</head>
+<body>
+    <h1>📜 Canlı Loglar</h1>
+    <pre id="logContent">Yükleniyor...</pre>
+    <a href="/">⬅ Geri dön</a>
+    <script>
+        function fetchLogs() { /* {{ KALDIRILDI }} */
+            fetch('/getlogs')
+                .then(response => response.text())
+                .then(data => { /* {{ KALDIRILDI }} */
+                    let lines = data.trim().split('\n').reverse().join('\n');
+                    lines = lines.replace(/INFO/g, '<span class="info">INFO</span>')
+                                 .replace(/WARNING/g, '<span class="warning">WARNING</span>')
+                                 .replace(/ERROR/g, '<span class="error">ERROR</span>');
+                    document.getElementById('logContent').innerHTML = lines;
+                });
+        }
+        fetchLogs();
+        setInterval(fetchLogs, 2000);
+    </script>
+</body>
+</html>

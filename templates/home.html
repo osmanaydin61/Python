@@ -1,0 +1,92 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Panel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='home_style.css') }}">
+
+</head>
+<body>
+    <a href="/logout" class="logout-button">Çıkış</a>
+    <h1>ADMİN PANEL</h1>
+
+    <div class="chart-grid">
+    <div class="chart-item">
+        <div class="chart-label">CPU Kullanımı</div>
+        <canvas id="cpuChart"></canvas>
+    </div>
+    <div class="chart-item">
+        <div class="chart-label">RAM Kullanımı</div>
+        <canvas id="ramChart"></canvas>
+    </div>
+    <div class="chart-item">
+        <div class="chart-label">Disk Kullanımı</div>
+        <canvas id="diskChart"></canvas>
+    </div>
+    </div>
+
+
+    <div class="main-buttons">
+        <a href="/network"    class="btn">🌐 Ağ İzle</a>
+        <a href="/logs"       class="btn">📜 Logları Gör</a>
+        <a href="/settings"   class="btn">⚙️ Ayarlar</a>
+        <a href="/anomali"    class="btn">📈 Anomali</a>
+        <a href="/tavsiye"    class="btn">💡 Tavsiye</a>
+    </div>
+
+    <div class="secondary-buttons">
+        <a href="/clean"       class="btn-clean">🧹 RAM Temizle</a>
+        <a href="/disktemizle" class="btn-clean">💾 Disk Temizle</a>
+    </div>
+
+    <div id="popup"></div>
+
+    <script>
+        const cpuLabels = [], cpuData = [], ramData = [], diskData = [], limit = 5;
+        const cpuChart = new Chart(document.getElementById('cpuChart').getContext('2d'), {
+            type:'line', data:{ labels:cpuLabels, datasets:[{ data:cpuData, borderColor:'red', borderWidth:3, pointRadius:2, tension:0.3 }]},
+            options:{ animation:false, plugins:{ legend:{ display:false }}, scales:{ y:{ min:0, max:100 }}}
+        });
+        const ramChart = new Chart(document.getElementById('ramChart').getContext('2d'), {
+            type:'line', data:{ labels:cpuLabels, datasets:[{ data:ramData, borderColor:'blue', borderWidth:3, pointRadius:2, tension:0.3 }]},
+            options:{ animation:false, plugins:{ legend:{ display:false }}, scales:{ y:{ min:0, max:100 }}}
+        });
+        const diskChart = new Chart(document.getElementById('diskChart').getContext('2d'), {
+            type:'line', data:{ labels:cpuLabels, datasets:[{ data:diskData, borderColor:'green', borderWidth:3, pointRadius:2, tension:0.3 }]},
+            options:{ animation:false, plugins:{ legend:{ display:false }}, scales:{ y:{ min:0, max:100 }}}
+        });
+
+        function fetchData(){
+            fetch('/metrics').then(r=>r.json()).then(data=>{
+                const t=new Date().toLocaleTimeString();
+                cpuLabels.push(t); cpuData.push(data.cpu);
+                ramData.push(data.ram); diskData.push(data.disk);
+                if(cpuLabels.length>limit){cpuLabels.shift(); cpuData.shift(); ramData.shift(); diskData.shift();}
+                cpuChart.update(); ramChart.update(); diskChart.update();
+            });
+        }
+        fetchData(); setInterval(fetchData,2000);
+
+        function showPopup(msg){
+            const p=document.getElementById('popup');
+            p.innerText=msg; p.style.display='block'; p.classList.add('show');
+        }
+        function hidePopup(){
+            const p=document.getElementById('popup');
+            p.classList.remove('show'); setTimeout(()=>p.style.display='none',300);
+        }
+        document.querySelector("a[href='/clean']").addEventListener('click',e=>{
+            e.preventDefault(); showPopup('🧹 RAM temizleniyor...');
+            fetch('/clean').then(r=>r.text()).then(res=>{
+                setTimeout(()=>{ showPopup(res); setTimeout(hidePopup,3500);},3000);
+            });
+        });
+        document.querySelector("a[href='/disktemizle']").addEventListener('click',e=>{
+            e.preventDefault(); showPopup('💾 Disk temizleniyor...');
+            fetch('/disktemizle').then(r=>r.text()).then(res=>{
+                setTimeout(()=>{ showPopup(res); setTimeout(hidePopup,3500);},3000);
+            });
+        });
+    </script>

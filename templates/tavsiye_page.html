@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+    <html lang="tr">
+    <head>
+        <meta charset="UTF-8">
+        <title>Tavsiye ve Cevaplar</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='tavsiye_style.css') }}">
+    </head>
+    <body>
+        <h1>💡 Tavsiye ve Cevaplar</h1>
+
+        {% if not is_admin %}
+            <h2>💬 Tavsiyenizi Yazın</h2>
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="mode" value="tavsiye">
+                <textarea name="tavsiye" placeholder="Sistem ile ilgili tavsiyenizi yazın..." required></textarea><br>
+                <button type="submit">Gönder</button>
+            </form>
+        {% endif %}
+
+        {% if is_admin and tavsiyeler %}
+            <h2>📝 Gelen Tavsiyeler</h2>
+            {% for t in tavsiyeler %}
+                <div class="card">
+                    <p><strong>{{ t.user }}</strong> - {{ t.timestamp }}</p>
+                    <p>{{ t.tavsiye }}</p>
+                    <form method="POST">
+                        <input type="hidden" name="mode" value="cevap">
+                        <input type="hidden" name="user" value="{{ t.user }}">
+                        <input type="hidden" name="tavsiye" value="{{ t.tavsiye }}">
+                        <input type="hidden" name="timestamp" value="{{ t.timestamp }}">
+                        <textarea name="cevap" placeholder="Cevabınızı yazın..." required></textarea><br>
+                        <button type="submit">📩 Cevapla</button>
+                    </form>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <h2>📬 Admin Cevapları</h2>
+        {% if cevaplar %}
+            {% for c in cevaplar %}
+                <div class="card">
+                    <p><strong>{{ c.user }}</strong> ({{ c.tavsiye_tarih }})</p>
+                    <p>📝 Tavsiye: {{ c.tavsiye }}</p>
+                    <p>📩 Cevap: {{ c.cevap }}</p>
+                    <p>📅 Cevap Tarihi: {{ c.cevap_tarih }}</p>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>Henüz cevap yok.</p>
+        {% endif %}
+
+        <a href="/">⬅ Geri Dön</a>
+    </body>
+    </html>
