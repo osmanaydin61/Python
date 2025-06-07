@@ -14,8 +14,8 @@ from routes.dashboard import dashboard_routes
 from routes.settings import settings_routes
 from routes.anomaly import anomaly_routes
 from routes.tavsiye import tavsiye_routes
-from routes.network_monitor import get_network_page, get_network_content
-from routes.logger import get_logs_page, get_logs_content,log_info
+from routes.network import get_network_page, get_network_content
+from routes.logs import get_logs_page, get_logs_content,log_info
 from utils.resource_cleaner import clean_ram
 from utils.clean_disk_utils import clean_disk
 from cloudwatch.CloudWatch import send_email_alert

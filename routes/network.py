@@ -1,13 +1,14 @@
 # routes/network_monitor.py
 import psutil
-from flask import render_template, request
+from flask import render_template, request # request ekle (eğer kullanılıyorsa)
+# ... (diğer importlar)
 
 def get_network_page():
     # Bu route'un çalışması için templates/network_page.html dosyası olmalı
-        return render_template('network_page.html')
-   
+    return render_template('network_page.html')
 
 def get_network_content():
+    # ... (ağ metrikleri toplama mantığı) ...
     net_io = psutil.net_io_counters()
     interfaces = psutil.net_if_addrs()
     connections = psutil.net_connections()
@@ -30,17 +31,16 @@ def get_network_content():
             if ip.startswith("::ffff:"):
                 ip_clean = ip.split("::ffff:")[-1]
                 protokol = "IPv4"
-            elif ":" in ip:
+            elif ":" in ip: # IPv6 adresleri için
                 ip_clean = ip
                 protokol = "IPv6"
-            else:
+            else: # Varsayılan IPv4
                 ip_clean = ip
                 protokol = "IPv4"
-            aktifler.append(f"- {ip_clean}:{port} ({protokol})")
-
-    if aktifler:
-        content.extend(aktifler)
+            aktifler.append(f"  - {ip_clean}:{port} ({conn.laddr.ip}:{conn.laddr.port}) | {protokol} | Durum: {conn.status}")
+    if not aktifler:
+        content.append("  - Aktif bağlantı bulunamadı.")
     else:
-        content.append("- Aktif bağlantı bulunamadı.")
+        content.extend(aktifler)
 
     return "\n".join(content)
