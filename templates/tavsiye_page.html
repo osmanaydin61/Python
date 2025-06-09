@@ -8,32 +8,80 @@
     <body>
         <h1>💡 Tavsiye ve Cevaplar</h1>
 
+        {% if message %}
+            <p class="message-feedback {% if 'başarıyla' in message %}success{% else %}error{% endif %}">{{ message }}</p>
+        {% endif %}
+
         {% if not is_admin %}
             <h2>💬 Tavsiyenizi Yazın</h2>
             <form method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="mode" value="tavsiye">
+                
+                <label for="category">Kategori:</label>
+                <select id="category" name="category" required>
+                    <option value="">Kategori Seçin</option>
+                    <option value="Hata Raporu">Hata Raporu</option>
+                    <option value="Ozellik Istegi">Özellik İsteği</option>
+                    <option value="Genel Geri Bildirim">Genel Geri Bildirim</option>
+                    <option value="Performans Sorunu">Performans Sorunu</option>
+                    <option value="Diger">Diğer</option>
+                </select><br>
+
                 <textarea name="tavsiye" placeholder="Sistem ile ilgili tavsiyenizi yazın..." required></textarea><br>
                 <button type="submit">Gönder</button>
             </form>
         {% endif %}
 
-        {% if is_admin and tavsiyeler %}
+        {% if is_admin %}
             <h2>📝 Gelen Tavsiyeler</h2>
-            {% for t in tavsiyeler %}
-                <div class="card">
-                    <p><strong>{{ t.user }}</strong> - {{ t.timestamp }}</p>
-                    <p>{{ t.tavsiye }}</p>
-                    <form method="POST">
-                        <input type="hidden" name="mode" value="cevap">
-                        <input type="hidden" name="user" value="{{ t.user }}">
-                        <input type="hidden" name="tavsiye" value="{{ t.tavsiye }}">
-                        <input type="hidden" name="timestamp" value="{{ t.timestamp }}">
-                        <textarea name="cevap" placeholder="Cevabınızı yazın..." required></textarea><br>
-                        <button type="submit">📩 Cevapla</button>
-                    </form>
-                </div>
-            {% endfor %}
+            {% if tavsiyeler %}
+                {% for t in tavsiyeler %}
+                    <div class="card">
+                        <p><strong>{{ t.user }}</strong> - {{ t.timestamp }}</p>
+                        <div class="card-details">
+                            <span><strong>Durum:</strong> {{ t.status }}</span>
+                            <span><strong>Kategori:</strong> {{ t.category or 'Belirtilmemiş' }}</span>
+                            <span><strong>Öncelik:</strong> {{ t.priority }}</span>
+                        </div>
+                        <p>{{ t.tavsiye }}</p>
+                        
+                        {# Admin aksiyonları: Cevaplama ve Durum/Öncelik Güncelleme #}
+                        <div class="admin-actions">
+                            {# Cevaplama Formu #}
+                            <form method="POST">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="mode" value="cevap">
+                                <input type="hidden" name="suggestion_id" value="{{ t.id }}">
+                                <textarea name="cevap" placeholder="Cevabınızı yazın..." required></textarea><br>
+                                <button type="submit">📩 Cevapla</button>
+                            </form>
+
+                            {# Durum ve Öncelik Güncelleme Formu #}
+                            <form method="POST" style="margin-top: 10px;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="mode" value="update_status_priority">
+                                <input type="hidden" name="suggestion_id" value="{{ t.id }}">
+                                <select name="new_status">
+                                    <option value="Yeni" {% if t.status == 'Yeni' %}selected{% endif %}>Yeni</option>
+                                    <option value="Inceleniyor" {% if t.status == 'Inceleniyor' %}selected{% endif %}>İnceleniyor</option>
+                                    <option value="Cevaplandi" {% if t.status == 'Cevaplandi' %}selected{% endif %}>Cevaplandı</option>
+                                    <option value="Cozuldu" {% if t.status == 'Cozuldu' %}selected{% endif %}>Çözüldü</option>
+                                    <option value="Reddedildi" {% if t.status == 'Reddedildi' %}selected{% endif %}>Reddedildi</option>
+                                </select>
+                                <select name="new_priority">
+                                    <option value="Dusuk" {% if t.priority == 'Düşük' %}selected{% endif %}>Düşük</option>
+                                    <option value="Orta" {% if t.priority == 'Orta' %}selected{% endif %}>Orta</option>
+                                    <option value="Yuksek" {% if t.priority == 'Yüksek' %}selected{% endif %}>Yüksek</option>
+                                </select>
+                                <button type="submit">Durum/Öncelik Güncelle</button>
+                            </form>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>Henüz gelen tavsiye bulunmuyor.</p>
+            {% endif %}
         {% endif %}
 
         <h2>📬 Admin Cevapları</h2>
@@ -44,6 +92,14 @@
                     <p>📝 Tavsiye: {{ c.tavsiye }}</p>
                     <p>📩 Cevap: {{ c.cevap }}</p>
                     <p>📅 Cevap Tarihi: {{ c.cevap_tarih }}</p>
+                    <div class="actions"> {# Cevapları silme butonu için actions div'i #}
+                        <form method="POST" style="display:inline-block;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="mode" value="delete_response">
+                            <input type="hidden" name="response_id" value="{{ c.id }}"> {# Cevabın ID'sini gönder #}
+                            <button type="submit" class="delete-response-btn" onclick="return confirm('Bu cevabı silmek istediğinizden emin misiniz?');">Sil</button>
+                        </form>
+                    </div>
                 </div>
             {% endfor %}
         {% else %}

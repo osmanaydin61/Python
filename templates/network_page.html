@@ -1,23 +1,124 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Ağ İzleme</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='network_style.css') }}">
 
-<html>
-    <head>
-        <title>Ağ İzleme</title>
-        <link rel="stylesheet" href="{{ url_for('static', filename='network_style.css') }}">
-    </head>
-    <body>
-        <h1>🌐 Ağ İzleme</h1>
-        <pre id="networkContent">Yükleniyor...</pre>
-        <a href="/">⬅ Geri dön</a>
-        <script>
-            function fetchNetwork() {
-                fetch('/getnetwork')
-                    .then(response => response.text())
-                    .then(data => {
-                        document.getElementById('networkContent').innerText = data;
-                    });
+</head>
+<body>
+    <h1>🌐 Ağ İzleme</h1>
+
+    {% if message %}
+        <p class="message-feedback success">{{ message }}</p>
+    {% endif %}
+
+    {# Ağ Arayüzü Seçimi #}
+    <div class="interface-select-form">
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label for="interface_select">Arayüz Seç:</label>
+            <select id="interface_select" name="selected_interface">
+                {% for interface in interface_names %}
+                    <option value="{{ interface }}" {% if interface == selected_interface %}selected{% endif %}>{{ interface }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit">Seç</button>
+        </form>
+    </div>
+
+    {# Anlık Trafik İstatistikleri #}
+    <div class="network-stats">
+        <h2>Anlık Ağ İstatistikleri ({{ selected_interface }})</h2>
+        <p><strong>Gönderilen Toplam Bayt:</strong> {{ total_bytes_sent }}</p>
+        <p><strong>Alınan Toplam Bayt:</strong> {{ total_bytes_recv }}</p>
+    </div>
+
+    {# Ağ Trafiği Geçmişi Grafikleri #}
+    <div class="chart-container">
+        <h2>Ağ Trafiği Hızı ({{ selected_interface }})</h2>
+        <canvas id="networkTrafficChart"></canvas>
+    </div>
+
+    {# Aktif Ağ Bağlantıları Listesi #}
+    <div class="network-stats">
+        <h2>Aktif Ağ Bağlantıları</h2>
+        {% if connections %}
+            <table class="connection-table">
+                <thead>
+                    <tr>
+                        <th>PID</th>
+                        <th>İşlem Adı</th>
+                        <th>Yerel Adres</th>
+                        <th>Uzak Adres</th>
+                        <th>Durum</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for conn in connections %}
+                        <tr>
+                            <td>{{ conn.pid or 'N/A' }}</td>
+                            <td>{{ conn.process_name or 'N/A' }}</td>
+                            <td>{{ conn.laddr_ip }}:{{ conn.laddr_port }}</td>
+                            <td>
+                                {% if conn.raddr_ip %}{{ conn.raddr_ip }}:{{ conn.raddr_port }}{% else %}Yok{% endif %}
+                            </td>
+                            <td>{{ conn.status }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>Aktif ağ bağlantısı bulunmuyor.</p>
+        {% endif %}
+    </div>
+
+
+    <a href="/">⬅ Geri Dön</a>
+
+    <script>
+        // Ağ Trafiği Hızı Grafiği
+        const networkTrafficChartCtx = document.getElementById('networkTrafficChart').getContext('2d');
+        new Chart(networkTrafficChartCtx, {
+            type: 'line',
+            data: {
+                labels: {{ network_timestamps | tojson }},
+                datasets: [
+                    {
+                        label: 'Giden (B/s)',
+                        data: {{ bytes_sent_rates | tojson }},
+                        borderColor: 'orange',
+                        backgroundColor: 'rgba(255, 165, 0, 0.2)',
+                        fill: true,
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Gelen (B/s)',
+                        data: {{ bytes_recv_rates | tojson }},
+                        borderColor: 'cyan',
+                        backgroundColor: 'rgba(0, 255, 255, 0.2)',
+                        fill: true,
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        title: { display: true, text: 'Hız (Bayt/s)' }
+                    },
+                    x: { 
+                        title: { display: true, text: 'Zaman' },
+                        ticks: { maxRotation: 45, minRotation: 45 }
+                    }
+                },
+                plugins: { legend: { display: true }, title: { display: true, text: 'Ağ Trafiği Hızı' } }
             }
-            fetchNetwork();
-            setInterval(fetchNetwork, 3000);
-        </script>
-    </body>
-    </html>
+        });
+    </script>
+</body>
+</html>

@@ -8,7 +8,7 @@ from routes.logs import log_info, log_warning, log_error # Loglama fonksiyonlar�
 import getpass # current_user için
 
 def clean_ram():
-    threshold = 20.0  # %20'den fazla RAM kullananlar kapatılacak
+    threshold = current_app.config.get('RAM_CLEAN_THRESHOLD', 20.0)
     killed = []
     skipped = []
     current_user = getpass.getuser() # Mevcut kullanıcıyı alıyoruz

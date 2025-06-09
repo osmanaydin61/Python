@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
     <head>
         <title>Ayarlar</title>
@@ -7,29 +8,78 @@
     <h1>⚙️ Ayarlar</h1>
     <form method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
         <label>CPU Alarm Eşiği (%)</label>
-        <input type="number" name="cpu" value="{{ config_settings.cpu }}" required>
+        <input type="number" name="cpu" value="{{ config_settings.CPU_THRESHOLD }}" required>
 
         <label>RAM Alarm Eşiği (%)</label>
-        <input type="number" name="ram" value="{{ config_settings.ram }}" required>
+        <input type="number" name="ram" value="{{ config_settings.RAM_THRESHOLD }}" required>
 
         <label>Disk Alarm Eşiği (%)</label>
-        <input type="number" name="disk" value="{{ config_settings.disk }}" required>
+        <input type="number" name="disk" value="{{ config_settings.DISK_THRESHOLD }}" required>
 
         <label>E-posta Adresi</label>
-        <input type="email" name="email" value="{{ config_settings.email }}" required>
+        <input type="email" name="email" value="{{ config_settings.EMAIL_RECIPIENT }}" required>
 
-        <label><input type="checkbox" name="alarm" {% if config_settings.alarm %}checked{% endif %}> Alarm Aktif</label>
-        <label><input type="checkbox" name="aggressive" {% if config_settings.aggressive %}checked{% endif %}> Otomatik Anomali Müdahalesi</label>
+        <label><input type="checkbox" name="alarm" {% if config_settings.ALARM_ENABLED %}checked{% endif %}> Alarm Aktif</label>
+        <label><input type="checkbox" name="aggressive" {% if config_settings.AGGRESSIVE_MODE %}checked{% endif %}> Otomatik Müdahale</label>
+
+        {# Gelişmiş Ayarlar Başlığı ve Gizlenecek İçerik #}
+        <h3 id="advancedSettingsHeader" class="advanced-settings-header">Gelişmiş Ayarlar</h3>
+        <div id="advancedSettingsContent" class="advanced-settings-content">
+            <hr> 
+            <label>Metrik Kayıt Aralığı (Saniye)</label>
+            <input type="number" name="metrics_interval" value="{{ config_settings.METRICS_RECORD_INTERVAL }}" required>
+
+            <label>Anomali Algılama Hassasiyeti (0.001 - 0.5 arası)</label>
+            <input type="number" name="anomaly_contamination" step="0.001" min="0.001" max="0.5" value="{{ config_settings.ANOMALY_CONTAMINATION }}" required>
+
+            <label>ML Modeli Min. Örnek Sayısı</label>
+            <input type="number" name="min_samples_ml" value="{{ config_settings.MIN_SAMPLES_FOR_ML_CONFIG }}" required>
+
+            <label>RAM Temizleme Eşiği (%)</label>
+            <input type="number" name="ram_clean_threshold" value="{{ config_settings.RAM_CLEAN_THRESHOLD }}" required>
+            
+            <label>Disk Temizleme Doluluk Eşiği (%)</label>
+            <input type="number" name="disk_clean_threshold_percent" value="{{ config_settings.DISK_CLEAN_THRESHOLD_PERCENT }}" required>
+
+            <label>Log Tutma Süresi (Gün)</label>
+            <input type="number" name="log_retention_days" value="{{ config_settings.LOG_RETENTION_DAYS }}" required>
+
+            <label>Varsayılan Ağ Arayüzü</label>
+            <input type="text" name="default_network_interface" value="{{ config_settings.DEFAULT_NETWORK_INTERFACE }}" placeholder="örn: eth0" required>
+        </div>
+
 
         <button type="submit">Kaydet</button>
-        <button type="submit" name="testmail" class="testmail">📨 Test Mail Gönder</button>
-    </form>
+        {# "Test Mail Gönder" butonu kaldırıldı #}
+        </form>
 
-    {% if message %} {# message değişkeni varsa göster #}
+    {% if message %}
         <p class="message-feedback {% if '❌' in message %}error{% endif %}">{{ message }}</p>
     {% endif %}
 
+    <hr> 
+    <div class="user-management-link"> 
+        <a href="{{ url_for('user_management.manage_users') }}" class="btn-navigation">👥 Kullanıcıları Yönet</a>
+    </div>
+
     <a href="{{ url_for('dashboard.home') }}" class="geri-don-link">⬅ Geri Dön</a>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const header = document.getElementById('advancedSettingsHeader');
+            const content = document.getElementById('advancedSettingsContent');
+
+            if (header && content) {
+                header.addEventListener('click', function() {
+                    content.classList.toggle('show');
+                    header.classList.toggle('active');
+                });
+            } else {
+                console.error("Hata: 'advancedSettingsHeader' veya 'advancedSettingsContent' bulunamadı.");
+            }
+        });
+    </script>
     </body>
-    </html>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Kullanıcı Yönetimi</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='settings_style.css') }}"> {# Mevcut ayarlar stilini kullanabiliriz #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='user_management_style.css') }}">
+</head>
+<body>
+    <h1>👥 Kullanıcı Yönetimi</h1>
+
+    {# Kullanıcı Ekleme Formu #}
+    <div class="add-user-form">
+        <h2>Yeni Kullanıcı Ekle</h2>
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="add_user">
+            
+            <label for="email">E-posta:</label>
+            <input type="email" id="email" name="email" required>
+
+            <label for="password">Şifre:</label>
+            <input type="password" id="password" name="password" required>
+
+            <label for="role">Rol:</label>
+            <select id="role" name="role">
+                <option value="readonly">readonly</option>
+                <option value="admin">admin</option>
+            </select>
+            <button type="submit">Kullanıcı Ekle</button>
+        </form>
+        {% if add_message %}
+            <p class="{% if 'başarıyla' in add_message %}success-message{% else %}error-message{% endif %}">{{ add_message }}</p>
+        {% endif %}
+    </div>
+
+    {# Kullanıcı Listesi #}
+    <div class="user-list-section">
+        {% if users %}
+            <h2>Mevcut Kullanıcılar</h2>
+            <table class="user-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>E-posta</th>
+                        <th>Rol</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user.id }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>{{ user.role }}</td>
+                        <td class="user-actions">
+                            <form method="POST" action="{{ url_for('user_management.manage_users') }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="user_id" value="{{ user.id }}">
+                                {% set is_current_user = (user.email == session.get('user')) %}
+                                {% set is_last_admin = (user.role == 'admin' and users|selectattr('role', 'equalto', 'admin')|list|length == 1) %}
+                                
+                                <button type="submit" name="action" value="delete_user" 
+                                    class="delete-button {% if is_current_user or is_last_admin %}disabled-button{% endif %}" 
+                                    {% if is_current_user or is_last_admin %}disabled{% endif %} 
+                                    onclick="return confirm('Bu kullanıcıyı silmek istediğinizden emin misiniz?');">
+                                    Sil
+                                </button>
+                                {% if is_current_user %}
+                                    <span style="font-size: 0.8em; color: #aaa;">(Kendini silemezsin)</span>
+                                {% elif is_last_admin %}
+                                    <span style="font-size: 0.8em; color: #aaa;">(Son admin)</span>
+                                {% endif %}
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>Henüz kayıtlı kullanıcı bulunmuyor.</p>
+        {% endif %}
+    </div>
+
+    <a href="/">⬅ Geri Dön</a>
+</body>
+</html>

@@ -1,0 +1,90 @@
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #1f1f1f;
+            border: 1px solid #00adb5;
+        }
+        .user-table th, .user-table td {
+            border: 1px solid #00adb5;
+            padding: 10px;
+            text-align: left;
+        }
+        .user-table th {
+            background-color: #00adb5;
+            color: #0f111a;
+        }
+        .user-actions form {
+            display: inline-block;
+            margin-right: 5px;
+        }
+        .user-actions button {
+            padding: 5px 10px;
+            font-size: 0.9em;
+            margin-top: 0; /* Üstteki buton stilini ezebilir */
+            cursor: pointer;
+            border-radius: 4px;
+            border: none;
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+        /* .edit-button { background-color: #2196f3; } */ /* Şimdilik düzenleme butonu yok */
+        /* .edit-button:hover { background-color: #1976d2; } */
+        .delete-button { background-color: #e74c3c; }
+        .delete-button:hover { background-color: #c0392b; }
+
+        .add-user-form {
+            background-color: #1f1f1f;
+            padding: 20px;
+            border-radius: 6px;
+            max-width: 500px;
+            margin: 20px auto;
+            border: 1px solid #00adb5;
+        }
+        .add-user-form h2, .user-list-section h2 {
+            color: #00adb5;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        .add-user-form label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold;
+        }
+        .add-user-form input[type="email"],
+        .add-user-form input[type="password"],
+        .add-user-form select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 4px;
+            border: none;
+            background-color: #333;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+        .add-user-form button[type="submit"] {
+            background-color: #00adb5;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .add-user-form button[type="submit"]:hover {
+            background-color: #009baa;
+        }
+        .error-message {
+            color: #ff4d4d;
+            text-align: center;
+            margin-top: 10px;
+        }
+        .success-message {
+            color: #00ff7f;
+            text-align: center;
+            margin-top: 10px;
+        }
+        .disabled-button {
+            background-color: #666 !important;
+            cursor: not-allowed !important;
+        }

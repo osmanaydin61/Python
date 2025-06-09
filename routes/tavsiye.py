@@ -1,71 +1,155 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session
-import pandas as pd
-import os
+from flask import Blueprint, render_template, request, redirect, url_for, session, current_app
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+from models import db, Suggestion, Response
+from cloudwatch.CloudWatch import send_email_alert
+
 tavsiye_routes = Blueprint("tavsiye", __name__)
-TAVSIYE_FILE = "tavsiyeler.csv"
-CEVAP_FILE = "cevaplar.csv"
 
 @tavsiye_routes.route("/tavsiye", methods=["GET", "POST"])
 def tavsiye():
-    # Tavsiye Gönderme (readonly)
-    if request.method == "POST" and request.form.get("mode") == "tavsiye":
-        user = session.get("user", "Anonim")
-        tavsiye_metni = request.form.get("tavsiye")
-        timestamp = datetime.now(ZoneInfo("Europe/Istanbul")).strftime("%Y-%m-%d %H:%M:%S")
-        new_entry = pd.DataFrame([[user, tavsiye_metni, timestamp]], columns=["user", "tavsiye", "timestamp"])
+    message = ""
+    with current_app.app_context(): # Uygulama bağlamı içinde veritabanı işlemleri
 
-        if os.path.exists(TAVSIYE_FILE):
-            df = pd.read_csv(TAVSIYE_FILE)
-            df = pd.concat([df, new_entry], ignore_index=True)
-        else:
-            df = new_entry
-        df.to_csv(TAVSIYE_FILE, index=False)
-        return redirect(url_for("tavsiye.tavsiye"))
+        # Tavsiye Gönderme (Kullanıcı)
+        if request.method == "POST" and request.form.get("mode") == "tavsiye":
+            user_email = session.get("user", "Anonim")
+            tavsiye_metni = request.form.get("tavsiye")
+            category = request.form.get("category")
+            
+            if not tavsiye_metni:
+                message = "❌ Tavsiye metni boş olamaz."
+            else:
+                new_suggestion = Suggestion(
+                    user_email=user_email,
+                    tavsiye_text=tavsiye_metni,
+                    timestamp=datetime.now(ZoneInfo("Europe/Istanbul")),
+                    status='Yeni',
+                    category=category,
+                    priority='Düşük'
+                )
+                db.session.add(new_suggestion)
+                db.session.commit()
+                message = "✅ Tavsiyeniz başarıyla gönderildi."
 
-    # Admin Cevaplama
-    if request.method == "POST" and request.form.get("mode") == "cevap":
-        if session.get("user") != "osmanaydin2016@yandex.com":
-            return "Yetkisiz işlem."
-        user = request.form.get("user")
-        tavsiye_text = request.form.get("tavsiye")
-        timestamp = request.form.get("timestamp")
-        cevap = request.form.get("cevap")
-        cevap_timestamp = datetime.now(ZoneInfo("Europe/Istanbul")).strftime("%Y-%m-%d %H:%M:%S")
+        # Admin Cevaplama
+        elif request.method == "POST" and request.form.get("mode") == "cevap":
+            if session.get("role") != "admin":
+                return "Yetkisiz işlem.", 403
+            
+            suggestion_id = request.form.get("suggestion_id")
+            cevap_text = request.form.get("cevap")
+            
+            original_suggestion = Suggestion.query.get(suggestion_id)
 
-        # Cevabı kaydet
-        new_entry = pd.DataFrame([[user, tavsiye_text, cevap, timestamp, cevap_timestamp]],
-                                 columns=["user", "tavsiye", "cevap", "tavsiye_tarih", "cevap_tarih"])
-        if os.path.exists(CEVAP_FILE):
-            df = pd.read_csv(CEVAP_FILE)
-            df = pd.concat([df, new_entry], ignore_index=True)
-        else:
-            df = new_entry
-        df.to_csv(CEVAP_FILE, index=False)
+            if not original_suggestion:
+                message = "❌ Cevaplanacak tavsiye bulunamadı veya daha önce cevaplandı."
+            elif not cevap_text:
+                message = "❌ Cevap metni boş olamaz."
+            else:
+                new_response = Response(
+                    user_email=original_suggestion.user_email,
+                    tavsiye_text=original_suggestion.tavsiye_text,
+                    tavsiye_timestamp=original_suggestion.timestamp,
+                    cevap_text=cevap_text,
+                    cevap_timestamp=datetime.now(ZoneInfo("Europe/Istanbul"))
+                )
+                db.session.add(new_response)
+                
+                # Cevaplanan tavsiyeyi silmek yerine durumunu 'Cevaplandı' olarak güncelle
+                # ve 'Gelen Tavsiyeler' listesinde gösterme (listeleme mantığında filtreleyeceğiz)
+                original_suggestion.status = 'Cevaplandı' 
+                db.session.commit()
+                message = f"✅ Tavsiye '{original_suggestion.user_email}' tarafından başarıyla cevaplandı."
 
-        # Tavsiyeyi sil
-        df_tavsiye = pd.read_csv(TAVSIYE_FILE)
-        df_tavsiye = df_tavsiye[~((df_tavsiye['user'] == user) & (df_tavsiye['tavsiye'] == tavsiye_text) & (df_tavsiye['timestamp'] == timestamp))]
-        df_tavsiye.to_csv(TAVSIYE_FILE, index=False)
-        return redirect(url_for("tavsiye.tavsiye"))
+                try:
+                    recipient_email = original_suggestion.user_email
+                    alert_enabled = current_app.config.get('ALARM_ENABLED', False)
+                    if alert_enabled and recipient_email != "Anonim":
+                        mail_subject = f"Tavsiyenize Cevap Geldi: {original_suggestion.tavsiye_text[:30]}..."
+                        mail_body = f"Sayın {recipient_email},\n\n" \
+                                    f"Gönderdiğiniz tavsiyeye bir cevap geldi:\n" \
+                                    f"Tavsiye: \"{original_suggestion.tavsiye_text}\"\n" \
+                                    f"Cevap: \"{cevap_text}\"\n\n" \
+                                    f"OptiGuard Yönetim Paneli"
+                        send_email_alert(recipient_email, mail_subject, mail_body)
+                        message += " (E-posta ile bilgilendirildi)"
+                except Exception as e:
+                    message += f" (E-posta gönderilemedi: {str(e)})"
+            
+        # Admin Durum/Öncelik Güncelleme (Zaten vardı)
+        elif request.method == "POST" and request.form.get("mode") == "update_status_priority":
+            if session.get("role") != "admin":
+                return "Yetkisiz işlem.", 403
+            
+            suggestion_id = request.form.get("suggestion_id")
+            new_status = request.form.get("new_status")
+            new_priority = request.form.get("new_priority")
 
-    # Verileri hazırla
-    tavsiyeler = []
-    cevaplar = []
-    if os.path.exists(TAVSIYE_FILE):
-        tavsiyeler = pd.read_csv(TAVSIYE_FILE).to_dict(orient="records")
+            suggestion_to_update = Suggestion.query.get(suggestion_id)
+            if suggestion_to_update:
+                suggestion_to_update.status = new_status
+                suggestion_to_update.priority = new_priority
+                db.session.commit()
+                message = f"✅ Tavsiye ID:{suggestion_id} durumu '{new_status}', önceliği '{new_priority}' olarak güncellendi."
+            else:
+                message = "❌ Güncellenecek tavsiye bulunamadı."
+        
+        # Admin Cevap Silme - YENİ ROUTE İŞLEMİ
+        elif request.method == "POST" and request.form.get("mode") == "delete_response":
+            if session.get("role") != "admin":
+                return "Yetkisiz işlem.", 403
+            
+            response_id = request.form.get("response_id")
+            response_to_delete = Response.query.get(response_id)
 
-    if os.path.exists(CEVAP_FILE):
-        df = pd.read_csv(CEVAP_FILE)
-    if session.get("user") == "osmanaydin2016@yandex.com":
-        cevaplar = df.to_dict(orient="records")  # Admin tüm cevapları görür
-    else:
-        user = session.get("user")
-        cevaplar = df[df['user'] == user].to_dict(orient="records")  # Sadece kendi cevaplarını görür
+            if response_to_delete:
+                db.session.delete(response_to_delete)
+                db.session.commit()
+                message = f"✅ Cevap ID:{response_id} başarıyla silindi."
+            else:
+                message = "❌ Silinecek cevap bulunamadı."
 
 
-    is_admin = session.get("user") == "osmanaydin2016@yandex.com"
+        # Verileri veritabanından çek ve filtrele/sırala
+        # Adminler tüm tavsiyeleri (cevaplanmış olanlar hariç) ve tüm cevapları görür
+        if session.get("role") == "admin":
+            # Sadece 'Cevaplandı' durumunda olmayan tavsiyeleri göster
+            tavsiyeler_query = Suggestion.query.filter(Suggestion.status != 'Cevaplandı').order_by(Suggestion.timestamp.desc()).all()
+            cevaplar_query = Response.query.order_by(Response.cevap_timestamp.desc()).all()
+        else: # Normal kullanıcılar sadece kendi tavsiyelerini ve kendilerine verilen cevapları görür
+            user_email = session.get("user")
+            tavsiyeler_query = Suggestion.query.filter_by(user_email=user_email).filter(Suggestion.status != 'Cevaplandı').order_by(Suggestion.timestamp.desc()).all()
+            cevaplar_query = Response.query.filter_by(user_email=user_email).order_by(Response.cevap_timestamp.desc()).all()
 
-    return render_template('tavsiye_page.html', tavsiyeler=tavsiyeler, cevaplar=cevaplar, is_admin=is_admin)
+
+        tavsiyeler = []
+        for t in tavsiyeler_query:
+            tavsiyeler.append({
+                'id': t.id,
+                'user': t.user_email,
+                'tavsiye': t.tavsiye_text,
+                'timestamp': t.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                'status': t.status,
+                'category': t.category,
+                'priority': t.priority
+            })
+
+        cevaplar = []
+        for c in cevaplar_query:
+            cevaplar.append({
+                'id': c.id, # Cevap ID'sini de gönder
+                'user': c.user_email,
+                'tavsiye': c.tavsiye_text,
+                'tavsiye_tarih': c.tavsiye_timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                'cevap': c.cevap_text,
+                'cevap_tarih': c.cevap_timestamp.strftime("%Y-%m-%d %H:%M:%S")
+            })
+        
+        is_admin = session.get("role") == "admin"
+        if not is_admin:
+            user_email = session.get("user")
+            cevaplar = [c for c in cevaplar if c['user'] == user_email]
+
+    return render_template('tavsiye_page.html', tavsiyeler=tavsiyeler, cevaplar=cevaplar, is_admin=is_admin, message=message)

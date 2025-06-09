@@ -4,16 +4,15 @@ from flask import Blueprint, render_template
 from auth import login_required
 import os
 import pandas as pd
-from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo # zoneinfo import edildi
+from datetime import datetime, timedelta, UTC 
+from zoneinfo import ZoneInfo
 
 history_routes = Blueprint("history", __name__)
 
 @history_routes.route("/history")
 @login_required
 def history():
-    # Tüm veri değişkenlerini başlangıçta boş listelerle başlatın.
-    # Bu, dosya yoksa veya boşsa JS'e her zaman geçerli boş verilerin gitmesini sağlar.
+    ISTANBUL_TZ = ZoneInfo("Europe/Istanbul")
     history_data = {
         'timestamps': [], 
         'cpu_percents': [], 
