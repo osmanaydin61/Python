@@ -1,6 +1,0 @@
-timestamp,cpu_percent,ram_percent,disk_percent,anomaly,top_cpu_processes,top_ram_processes
-2025-05-26 10:46:31,25.0,59.0,80.7,0,"System Idle Process(1115.8%), python.exe(21.6%), Redragon K580RGB.exe(6.4%)","chrome.exe(4.0%), Code.exe(3.8%), MemCompression(2.6%)"
-2025-05-26 10:46:34,0.0,58.8,80.7,0,"System Idle Process(1139.6%), python.exe(22.2%), chrome.exe(6.5%)","chrome.exe(4.0%), Code.exe(3.8%), MemCompression(2.6%)"
-2025-05-26 10:46:38,0.0,58.8,80.7,0,"System Idle Process(1097.6%), python.exe(22.5%), chrome.exe(14.2%)","chrome.exe(4.0%), Code.exe(3.8%), MemCompression(2.6%)"
-2025-05-26 10:46:42,8.3,58.8,80.7,0,"System Idle Process(1106.3%), python.exe(21.4%), sqlservr.exe(16.1%)","chrome.exe(4.0%), Code.exe(3.8%), MemCompression(2.6%)"
-2025-05-26 10:46:46,0.0,58.7,80.7,0,"System Idle Process(1051.3%), python.exe(22.1%), sqlservr.exe(22.1%)","chrome.exe(4.0%), Code.exe(3.8%), MemCompression(2.6%)"

@@ -20,7 +20,7 @@
         <input type="email" name="email" value="{{ config_settings.email }}" required>
 
         <label><input type="checkbox" name="alarm" {% if config_settings.alarm %}checked{% endif %}> Alarm Aktif</label>
-        <label><input type="checkbox" name="aggressive" {% if config_settings.aggressive %}checked{% endif %}> Otomatik Müdahale</label>
+        <label><input type="checkbox" name="aggressive" {% if config_settings.aggressive %}checked{% endif %}> Otomatik Anomali Müdahalesi</label>
 
         <button type="submit">Kaydet</button>
         <button type="submit" name="testmail" class="testmail">📨 Test Mail Gönder</button>

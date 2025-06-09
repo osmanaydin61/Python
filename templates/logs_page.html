@@ -10,15 +10,21 @@
     <pre id="logContent">Yükleniyor...</pre>
     <a href="/">⬅ Geri dön</a>
     <script>
-        function fetchLogs() { /* {{ KALDIRILDI }} */
+        function fetchLogs() {
             fetch('/getlogs')
                 .then(response => response.text())
-                .then(data => { /* {{ KALDIRILDI }} */
-                    let lines = data.trim().split('\n').reverse().join('\n');
-                    lines = lines.replace(/INFO/g, '<span class="info">INFO</span>')
-                                 .replace(/WARNING/g, '<span class="warning">WARNING</span>')
-                                 .replace(/ERROR/g, '<span class="error">ERROR</span>');
-                    document.getElementById('logContent').innerHTML = lines;
+                .then(data => {
+                    // Logları satır satır ayır ve tersine çevir
+                    let lines = data.trim().split('\n').reverse(); // Satırları tersine çeviriyoruz
+                    
+                    // Her satırı işleyip HTML içine yerleştiriyoruz
+                    let formattedLogs = lines.map(line => {
+                        return line.replace(/INFO/g, '<span class="info">INFO</span>')
+                                   .replace(/WARNING/g, '<span class="warning">WARNING</span>')
+                                   .replace(/ERROR/g, '<span class="error">ERROR</span>');
+                    }).join('\n'); // Tekrar birleştir
+
+                    document.getElementById('logContent').innerHTML = formattedLogs;
                 });
         }
         fetchLogs();

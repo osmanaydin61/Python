@@ -1,0 +1,58 @@
+body {
+    background-color: #0f111a;
+    color: #e0e0e0;
+    font-family: monospace;
+    padding: 20px;
+    text-align: center;
+}
+h1 {
+    color: #00adb5;
+    margin-bottom: 30px;
+}
+
+/* Tüm grafikler için esnek konteyner - Yeni eklenen veya güncellenen kısım */
+.charts-grid-container {
+    display: flex;
+    flex-wrap: wrap; /* Sığmazsa alt satıra geç */
+    justify-content: center; /* Yan yana dururken ortala */
+    gap: 30px; /* Grafikler arası boşluk */
+    margin-bottom: 40px;
+}
+
+/* Her bir grafik için konteyner stili */
+.chart-container {
+    background-color: #1f1f1f;
+    border: 1px solid #00adb5;
+    border-radius: 8px;
+    padding: 15px;
+    flex: 1; /* Esnek öğe olarak büyüyüp küçülmesini sağlar */
+    min-width: 45%; /* İki grafik yan yana durduğunda her birinin minimum genişliği */
+    max-width: calc(50% - 15px); /* İki grafik yan yana ve boşlukları dikkate alarak */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+    box-sizing: border-box; /* Padding ve border genişliğe dahil edilir */
+}
+
+.chart-container h2 {
+    color: #00adb5;
+    margin-bottom: 15px;
+    font-size: 1.3em;
+}
+
+canvas {
+    width: 100% !important;
+    height: 300px !important; /* Grafiğin yüksekliği (daha küçük ekranlar için) */
+    background-color: #1e1e1e;
+    border: 1px solid #333; /* Canvas'a da ince bir border verilebilir */
+    border-radius: 6px;
+}
+
+a {
+    color: #00adb5;
+    text-decoration: none;
+    display: block;
+    text-align: center;
+    margin-top: 30px;
+}
+a:hover {
+    text-decoration: underline;
+}

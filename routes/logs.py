@@ -1,7 +1,7 @@
 # routes/logger.py
 import logging
 import os
-from flask import render_template, request, current_app
+from flask import render_template
 
 # --- Loglama Ayarları ve Fonksiyonları ---
 

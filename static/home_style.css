@@ -13,7 +13,7 @@ body {
     .chart-grid {
     display: flex;
     justify-content: center;
-    align-items: flex-start;   /* label’lar canvas’la aynı hizada başlasın */
+    align-items: flex-start;
     gap: 30px;
     margin-bottom: 40px;
     }
@@ -25,16 +25,17 @@ body {
     }
 
     .chart-label {
-    font-size: 20px;        /* istediğin büyüklük */
+    font-size: 20px;
     font-weight: bold;
     color: #00adb5;
     margin-bottom: 8px;
-    text-transform: uppercase; /* dilersen */
+    text-transform: uppercase;
     }
 
+    /* Grafikleri büyütmek için canvas boyutunu güncelleyin */
     canvas {
-        width: 300px !important;
-        height: 200px !important;
+        width: 500px !important; /* Genişliği artırın */
+        height: 350px !important; /* Yüksekliği artırın */
         background-color: #1f1f1f;
         border: 1px solid #00adb5;
         border-radius: 8px;
@@ -54,10 +55,10 @@ body {
     .main-buttons {
         display: flex;
         flex-wrap: wrap;
-        justify-content: center;  /* butonları ortaya alır */
+        justify-content: center;
         gap: 20px;
-        width: 100%;              /* tam genişlik */
-        margin: 0 auto 40px;      /* alttan boşluk, yatayda ortala */
+        width: 100%;
+        margin: 0 auto 40px;
     }
 
     /* Butonlar */
@@ -70,7 +71,7 @@ body {
         background-color: #1f1f1f;
         color: #00adb5;
         padding: 20px 30px;
-        min-width: 200px;         /* butonun minimum genişliği */
+        min-width: 200px;
         border: 1px solid #00adb5;
         font-size: 18px;
     }
@@ -84,7 +85,6 @@ body {
 
     /* Temizleme butonları */
     .btn-clean {
-        /* .btn özellikleri */
         border-radius: 8px;
         transition: all 0.3s;
         text-decoration: none;

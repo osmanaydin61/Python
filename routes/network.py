@@ -1,6 +1,6 @@
 # routes/network_monitor.py
 import psutil
-from flask import render_template, request # request ekle (eğer kullanılıyorsa)
+from flask import render_template
 # ... (diğer importlar)
 
 def get_network_page():

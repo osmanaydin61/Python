@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistem Metrik Geçmişi</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='history_style.css') }}">
+</head>
+<body>
+    <h1>📈 Sistem Metrik Geçmişi</h1>
+
+    <div class="charts-grid-container">
+        <div class="chart-container">
+            <h2>CPU Kullanım Geçmişi (%)</h2>
+            <canvas id="cpuHistoryChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h2>RAM Kullanım Geçmişi (%)</h2>
+            <canvas id="ramHistoryChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h2>Disk Kullanım Geçmişi (%)</h2>
+            <canvas id="diskHistoryChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h2>Anomali Sıklığı (Saatlik)</h2>
+            <canvas id="hourlyAnomalyTrendChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h2>Anomali Sıklığı (Günlük)</h2>
+            <canvas id="dailyAnomalyTrendChart"></canvas>
+        </div>
+    </div>
+
+    <a href="/">⬅ Geri Dön</a>
+
+    {# BURASI ÇOK ÖNEMLİ: Veriyi HTML içinde JS'e aktaran script bloğu #}
+    <script>
+        const historyData = {{ history_data | tojson }};
+        const hourlyAnomalyData = {{ hourly_anomaly_data | tojson }};
+        const dailyAnomalyData = {{ daily_anomaly_data | tojson }};
+    </script>
+
+    {# Kendi JavaScript kodumuzun olduğu harici dosya #}
+    {# Bu dosya, yukarıdaki script bloğundan SONRA yüklenmeli ki değişkenlere erişebilsin. #}
+    <script src="{{ url_for('static', filename='history_charts.js') }}"></script>
+</body>
+</html>

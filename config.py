@@ -22,3 +22,6 @@ class Config:
     LOG_GROUP = os.environ.get('LOG_GROUP') or 'SunucuPerformansLoglari'
     LOG_STREAM = os.environ.get('LOG_STREAM') or 'EC2_Instance_Log'
     LAST_ALERT_FILE = os.environ.get('LAST_ALERT_FILE') or '/tmp/last_alert_time.txt'
+
+    ALARM_ENABLED = os.environ.get('ALARM_ENABLED', 'True').lower() == 'true'
+    AGGRESSIVE_MODE = os.environ.get('AGGRESSIVE_MODE', 'False').lower() == 'true'
