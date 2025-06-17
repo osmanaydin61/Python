@@ -1,135 +1,73 @@
-# routes/history.py
+# routes/history.py (Nihai ve Düzeltilmiş Hali)
 
-from flask import Blueprint, render_template
-from auth import login_required
-import os
-import pandas as pd
-from datetime import datetime, timedelta, UTC 
+from flask import Blueprint, render_template, jsonify, flash
+import json
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
+from sqlalchemy import func
 
-history_routes = Blueprint("history", __name__)
+from extensions import db
+from models import Metric
 
-@history_routes.route("/history")
-@login_required
-def history():
-    ISTANBUL_TZ = ZoneInfo("Europe/Istanbul")
-    history_data = {
-        'timestamps': [], 
-        'cpu_percents': [], 
-        'ram_percents': [], 
-        'disk_percents': []
-    }
-    hourly_anomaly_data = {'labels': [], 'counts': []}
-    daily_anomaly_data = {'labels': [], 'counts': []}
+history_routes = Blueprint('history', __name__)
 
-    df = pd.DataFrame() # df'yi başlangıçta boş bir DataFrame olarak tanımlayın
+@history_routes.route('/history')
+def history_page():
+    """
+    Bu fonksiyon, "Geçmiş" sayfası için gerekli olan TÜM verileri
+    (ana metrikler, saatlik ve günlük anomali trendleri) tek seferde toplar ve gönderir.
+    """
+    try:
+        now_istanbul = datetime.now(ZoneInfo("Europe/Istanbul"))
 
-    # metrics_history.csv dosyasının varlığını ve boş olup olmadığını kontrol et
-    if os.path.exists("metrics_history.csv") and os.path.getsize("metrics_history.csv") > 0:
-        try:
-            df = pd.read_csv("metrics_history.csv")
-            # 'anomaly' ve 'anomaly_type' sütunlarının varlığını ve tiplerini garanti et
-            if 'anomaly' not in df.columns:
-                df['anomaly'] = 0
-            df['anomaly'] = df['anomaly'].fillna(0).astype(int) # NaN değerleri 0'a çevir
-            if 'anomaly_type' not in df.columns:
-                df['anomaly_type'] = ''
-        except pd.errors.EmptyDataError:
-            df = pd.DataFrame() # Dosya varsa ama boşsa, df'yi yine boş bırak
+        # 1. Ana Metrik Verilerini Çek (Son 24 saat)
+        time_filter_24h = now_istanbul - timedelta(hours=24)
+        metrics = db.session.query(Metric).filter(Metric.timestamp >= time_filter_24h).order_by(Metric.timestamp).all()
+        
+        main_data = {
+            "timestamps": [], "cpu_percents": [], "ram_percents": [], "disk_percents": []
+        }
+        for metric in metrics:
+            local_ts = metric.timestamp.astimezone(ZoneInfo("Europe/Istanbul"))
+            main_data["timestamps"].append(local_ts.strftime('%Y-%m-%dT%H:%M:%S'))
+            main_data["cpu_percents"].append(metric.cpu_percent)
+            main_data["ram_percents"].append(metric.ram_percent)
+            main_data["disk_percents"].append(metric.disk_percent)
 
+        # 2. Saatlik Anomali Trend Verisini Çek (Son 72 saat)
+        time_filter_72h = now_istanbul - timedelta(hours=72)
+        hourly_group_expression = func.strftime('%Y-%m-%d %H:00', Metric.timestamp)
+        hourly_results = db.session.query(
+            hourly_group_expression, func.count(Metric.id)
+        ).filter(
+            Metric.is_anomaly == True, Metric.timestamp >= time_filter_72h
+        ).group_by(hourly_group_expression).order_by(hourly_group_expression).all() # <-- DEĞİŞİKLİK
+        hourly_trend_data = [{"time": row[0], "count": row[1]} for row in hourly_results]
 
-    print(f"DEBUG: pd.read_csv sonrası df.empty: {df.empty}")
+        # 3. Günlük Anomali Trend Verisini Çek (Son 30 gün)
+        time_filter_30d = now_istanbul - timedelta(days=30)
+        daily_group_expression = func.strftime('%Y-%m-%d', Metric.timestamp)
+        daily_results = db.session.query(
+            daily_group_expression, func.count(Metric.id)
+        ).filter(
+            Metric.is_anomaly == True, Metric.timestamp >= time_filter_30d
+        ).group_by(daily_group_expression).order_by(daily_group_expression).all() # <-- DEĞİŞİKLİK
+        daily_trend_data = [{"time": row[0], "count": row[1]} for row in daily_results]
 
-    # --- Genel Metrik Geçmişi Verilerini Hazırlama ---
-    if not df.empty: # Sadece df boş değilse işlem yap
-        MAX_HISTORY_POINTS = 20 # En fazla 20 veri noktası göster
-        df_display = df.tail(MAX_HISTORY_POINTS)
+        # Tüm verileri JSON'a çevirip şablona gönder
+        return render_template(
+            'history_page.html',
+            data_json=json.dumps(main_data),
+            hourly_anomaly_json=json.dumps(hourly_trend_data),
+            daily_anomaly_json=json.dumps(daily_trend_data)
+        )
 
-        # df_display'in tail() işleminden sonra boş olup olmadığını kontrol et
-        # (örn. df 10 satır ama MAX_HISTORY_POINTS 20 ise df_display yine de boş olmaz, 10 satır olur)
-        # Ama eğer df baştan boşsa, df_display de boş olacaktır.
-        if not df_display.empty:
-            history_data = {
-                'timestamps': df_display['timestamp'].tolist() if 'timestamp' in df_display.columns else [],
-                'cpu_percents': df_display['cpu_percent'].tolist() if 'cpu_percent' in df_display.columns else [],
-                'ram_percents': df_display['ram_percent'].tolist() if 'ram_percent' in df_display.columns else [],
-                'disk_percents': df_display['disk_percent'].tolist() if 'disk_percent' in df_display.columns else []
-            }
-            print(f"DEBUG: history_data dolduruldu. İlk timestamp: {history_data['timestamps'][:1]}, son timestamp: {history_data['timestamps'][-1:]}")
-        else:
-            print("DEBUG: df_display boş olduğu için history_data doldurulmadı.")
-    else:
-        print("DEBUG: df boş olduğu için history_data doldurulmadı.")
-
-    # --- Anomali Trend Grafiği Verilerini Hazırlama ---
-    ISTANBUL_TZ = ZoneInfo("Europe/Istanbul")
-    
-    # df boş değilse VE 'anomaly' sütunu varsa anomali verilerini işle
-    if not df.empty and 'anomaly' in df.columns: 
-        anomalies_df = df[df['anomaly'] == -1].copy()
-
-        if not anomalies_df.empty:
-            anomalies_df['timestamp'] = pd.to_datetime(anomalies_df['timestamp'])
-            # Eğer timestamp'ler naive (saat dilimi bilgisi yok) ise, tz_localize ile başlayın.
-            if anomalies_df['timestamp'].dt.tz is None: 
-                anomalies_df['timestamp'] = anomalies_df['timestamp'].dt.tz_localize('Europe/Istanbul')
-            else: # Eğer saat dilimi bilgisi varsa, direkt dönüştür
-                anomalies_df['timestamp'] = anomalies_df['timestamp'].dt.tz_convert('Europe/Istanbul')
-
-            # Saatlik anomali sayıları (son 24 saat için)
-            end_time_hourly = datetime.now(ISTANBUL_TZ)
-            start_time_hourly = end_time_hourly - timedelta(hours=24)
-            hourly_time_points = [start_time_hourly + timedelta(hours=i) for i in range(25)]
-            
-            recent_anomalies_hourly = anomalies_df[anomalies_df['timestamp'] >= start_time_hourly].copy() 
-            recent_anomalies_hourly.loc[:, 'hour_floor'] = recent_anomalies_hourly['timestamp'].dt.floor('h') 
-            
-            hourly_counts_raw = recent_anomalies_hourly.groupby('hour_floor').size()
-            
-            hourly_labels_filled = []
-            hourly_counts_filled = []
-            for i in range(len(hourly_time_points)): 
-                current_hour_point = hourly_time_points[i]
-                hourly_labels_filled.append(current_hour_point.strftime('%H:%M'))
-                count = hourly_counts_raw.get(current_hour_point, 0)
-                hourly_counts_filled.append(int(count))
-
-            hourly_anomaly_data = {
-                'labels': hourly_labels_filled,
-                'counts': hourly_counts_filled
-            }
-            print(f"DEBUG: hourly_anomaly_data dolduruldu. Labels count: {len(hourly_anomaly_data['labels'])}")
-
-            # Günlük anomali sayıları (son 7 gün için)
-            end_time_daily = datetime.now(ISTANBUL_TZ)
-            start_time_daily = end_time_daily - timedelta(days=7)
-            daily_time_points = [start_time_daily + timedelta(days=i) for i in range(8)]
-
-            recent_anomalies_daily = anomalies_df[anomalies_df['timestamp'] >= start_time_daily].copy()
-            recent_anomalies_daily.loc[:, 'date_floor'] = recent_anomalies_daily['timestamp'].dt.floor('D')
-            
-            daily_counts_raw = recent_anomalies_daily.groupby('date_floor').size()
-
-            daily_labels_filled = []
-            daily_counts_filled = []
-            for i in range(len(daily_time_points)):
-                current_day_point = daily_time_points[i]
-                daily_labels_filled.append(current_day_point.strftime('%Y-%m-%d'))
-                count = daily_counts_raw.get(current_day_point, 0)
-                daily_counts_filled.append(int(count))
-
-            daily_anomaly_data = {
-                'labels': daily_labels_filled,
-                'counts': daily_counts_filled
-            }
-            print(f"DEBUG: daily_anomaly_data dolduruldu. Labels count: {len(daily_anomaly_data['labels'])}")
-        else:
-            print("DEBUG: anomalies_df boş olduğu için anomali trend verileri doldurulmadı.")
-    else:
-        print("DEBUG: df boş veya 'anomaly' sütunu eksik, anomali trend verileri doldurulmadı.")
-
-    print("DEBUG: history_page.html render ediliyor.")
-    return render_template('history_page.html',
-                           history_data=history_data,
-                           hourly_anomaly_data=hourly_anomaly_data,
-                           daily_anomaly_data=daily_anomaly_data)
+    except Exception as e:
+        print(f"Error fetching history data from DB: {e}")
+        flash(f"Geçmiş verileri yüklenirken bir hata oluştu: {e}", "danger")
+        return render_template(
+            'history_page.html',
+            data_json=json.dumps({}),
+            hourly_anomaly_json=json.dumps([]),
+            daily_anomaly_json=json.dumps([])
+        )

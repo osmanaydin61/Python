@@ -6,13 +6,13 @@ import signal
 from utils.anomaly_detector import is_critical_process # is_critical_process'i import ediyoruz
 from routes.logs import log_info, log_warning, log_error # Loglama fonksiyonlarını import ediyoruz
 import getpass # current_user için
-
+from flask import current_app
 def clean_ram():
     threshold = current_app.config.get('RAM_CLEAN_THRESHOLD', 20.0)
     killed = []
     skipped = []
     current_user = getpass.getuser() # Mevcut kullanıcıyı alıyoruz
-
+    
     for proc in psutil.process_iter(['pid', 'name', 'memory_percent', 'cmdline', 'username']):
         try:
             # Önce RAM eşiğini kontrol et

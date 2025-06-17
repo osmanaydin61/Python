@@ -2,9 +2,9 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from models import db, Suggestion, Response
+from models import Suggestion, Response
 from cloudwatch.CloudWatch import send_email_alert
-
+from extensions import db
 tavsiye_routes = Blueprint("tavsiye", __name__)
 
 @tavsiye_routes.route("/tavsiye", methods=["GET", "POST"])

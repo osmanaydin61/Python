@@ -3,8 +3,8 @@ from auth import login_required, roles_required
 from cloudwatch.CloudWatch import send_email_alert # E-posta gönderme fonksiyonu hala kullanılacak
 
 # VERİTABANI İMPORTLARI
-from models import db, Setting # db ve Setting modelini import edin
-
+from models import  Setting # db ve Setting modelini import edin
+from extensions import db
 settings_routes = Blueprint("settings", __name__)
 
 # Yardımcı fonksiyon: Ayarı veritabanına kaydeder

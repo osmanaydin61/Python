@@ -1,12 +1,14 @@
-# routes/logger.py
+# routes/logs.py (Zaman Dilimi Düzeltilmiş Hali)
+
 import logging
 import os
 from flask import render_template
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 # --- Loglama Ayarları ve Fonksiyonları ---
 
-# LOG_FILE_PATH'i Flask uygulamasının kök dizinine göre dinamik olarak tanımlayın
-# __file__ routes/logger.py'nin konumudur. os.pardir ile routes'dan bir üst dizine (proje köküne) çıkıyoruz.
+# Proje kök dizinini ve log dosyasının yolunu belirle
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 LOG_FOLDER_PATH = os.path.join(PROJECT_ROOT, "logs")
 LOG_FILE_PATH = os.path.join(LOG_FOLDER_PATH, "system.log")
@@ -14,13 +16,39 @@ LOG_FILE_PATH = os.path.join(LOG_FOLDER_PATH, "system.log")
 # Log klasörünü oluştur
 os.makedirs(LOG_FOLDER_PATH, exist_ok=True)
 
-logging.basicConfig(
-    filename=LOG_FILE_PATH,
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
-)
+# Zaman dilimini dikkate alan özel Formatter sınıfı
+class TimezoneFormatter(logging.Formatter):
+    """Log kayıt zamanını yerel saat dilimine çeviren formatlayıcı."""
+    def formatTime(self, record, datefmt=None):
+        # Log kaydının oluşturulma zamanını alıp İstanbul saatine çevir
+        dt = datetime.fromtimestamp(record.created, ZoneInfo("Europe/Istanbul"))
+        if datefmt:
+            return dt.strftime(datefmt)
+        else:
+            # Eğer format belirtilmemişse ISO formatında döndür
+            return dt.isoformat()
 
+# logging.basicConfig() yerine daha detaylı bir yapılandırma kullanıyoruz
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+# Eğer logger'a daha önce handler eklenmediyse (yeniden başlatmalarda çift logu önler)
+if not logger.handlers:
+    # Dosyaya yazacak bir handler oluştur
+    file_handler = logging.FileHandler(LOG_FILE_PATH, encoding='utf-8')
+    
+    # Özel formatlayıcımızı oluştur ve handler'a ata
+    formatter = TimezoneFormatter(
+        fmt="%(asctime)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S"
+    )
+    file_handler.setFormatter(formatter)
+    
+    # Handler'ı ana logger'a ekle
+    logger.addHandler(file_handler)
+
+
+# Bu fonksiyonlar aynı kalır, çünkü genel logger'ı kullanırlar
 def log_info(message):
     logging.info(message)
 
@@ -30,8 +58,8 @@ def log_warning(message):
 def log_error(message):
     logging.error(message)
 
+# Bu route'lar da aynı kalır
 def get_logs_page():
-    # Bu route'un çalışması için templates/logs_page.html dosyası olmalı
     try:
         return render_template('logs_page.html')
     except Exception as e:
@@ -41,7 +69,7 @@ def get_logs_page():
 def get_logs_content():
     if os.path.exists(LOG_FILE_PATH):
         try:
-            with open(LOG_FILE_PATH, "r") as f:
+            with open(LOG_FILE_PATH, "r", encoding='utf-8') as f:
                 return f.read()
         except Exception as e:
             log_error(f"Log dosyası okunurken hata: {e}")

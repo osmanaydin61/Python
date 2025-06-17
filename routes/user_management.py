@@ -1,9 +1,9 @@
 import os
 from flask import Blueprint, render_template, request, redirect, url_for, session, current_app
 from auth import login_required, roles_required
-from models import db, User # db ve User modelini import edin
+from models import User # db ve User modelini import edin
 from werkzeug.security import generate_password_hash # Şifre hashleme için
-
+from extensions import db
 user_management_routes = Blueprint("user_management", __name__)
 
 @user_management_routes.route("/users", methods=["GET", "POST"])

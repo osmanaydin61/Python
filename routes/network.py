@@ -4,8 +4,8 @@ from flask import Blueprint, render_template, request, jsonify, current_app, ses
 import psutil
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
-
-from models import db, NetworkMetric, Metric
+from extensions import db
+from models import NetworkMetric, Metric
 from auth import login_required 
 
 network_routes = Blueprint("network", __name__)

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
     <meta charset="UTF-8">
     <title>Anomali Tespiti</title>
@@ -7,56 +7,58 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='anomaly_style.css') }}">
 </head>
 <body>
-    <div id="popup" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: rgba(30,30,30,0.95); color: white; padding: 20px 40px; border-radius: 8px; font-size: 18px; z-index: 9999; text-align: center; box-shadow: 0 0 10px rgba(0,0,0,0.7);"></div>
+    <div id="popup"></div>
 
     <h1>Anomali Tespiti</h1>
 
-    <div class="chart-section">
-        <h2>Canlı Metrikler</h2>
+    <div class="chart-container">
         <canvas id="liveChart"></canvas>
     </div>
 
     <div class="anomaly-cards-container">
-        {% if filtered_rows %}
-            {% for row in filtered_rows %}
-                <div class="anomaly-card" id="anomaly-{{ loop.index }}">
-                    <p>🕒 {{ row['timestamp'] }} | 
-                       🔥 CPU: {{ row['cpu_percent'] }}% | 
-                       💾 RAM: {{ row['ram_percent'] }}% | 
-                       📀 Disk: {{ row['disk_percent'] }}%</p>
-                    <p><strong>💡 Anomali Tipi:</strong> {{ row['anomaly_type'] or 'Bilinmiyor' }}</p>
-                    <p>⚙️ CPU İşlemleri: {{ row['top_cpu_processes'] }}<br>💾 RAM İşlemleri: {{ row['top_ram_processes'] }}</p>
-
-                    <div class="anomaly-actions">
-                        <form class="kill-form" data-id="anomaly-{{ loop.index }}">
+        <h2>Tespit Edilen Aktif Anomaliler</h2>
+        {% if anomalies %}
+            {% for anomaly in anomalies %}
+                <div class="anomaly-card" id="anomaly-card-{{ anomaly.id }}">
+                    <div class="card-header">
+                        <strong>{{ anomaly.anomaly_type }}</strong>
+                        <span>{{ anomaly.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>İşlem:</strong> {{ anomaly.process_name or 'N/A' }} (PID: {{ anomaly.pid or 'N/A' }})</p>
+                        <p class="metrics-info">
+                            <span>🔥 CPU: {{ "%.2f"|format(anomaly.cpu_percent) }}%</span>
+                            <span>💾 RAM: {{ "%.2f"|format(anomaly.ram_percent) }}%</span>
+                            <span>📀 Disk: {{ "%.2f"|format(anomaly.disk_percent) }}%</span>
+                        </p>
+                        {% if anomaly.anomaly_image %}
+                            <a href="{{ url_for('static', filename='anomalies/' + anomaly.anomaly_image) }}" target="_blank">Anomali Grafiğini Gör</a>
+                        {% endif %}
+                    </div>
+                    <div class="card-actions">
+                        <form class="kill-form" onsubmit="killProcess(event, {{ anomaly.pid }})">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <input type="hidden" name="process" value="{{ row['top_cpu_processes'].split(',')[0].split('(')[0].strip() }}">
-                            <button type="submit" class="kill-button">❌ İşlemi Sonlandır</button>
+                            <button type="submit" class="btn btn-kill" {% if not anomaly.pid %}disabled{% endif %}>❌ İşlemi Sonlandır</button>
                         </form>
-
-                        <form class="ignore-form" data-id="anomaly-{{ loop.index }}">
+                        <form class="ignore-form" onsubmit="ignoreAnomaly(event, {{ anomaly.id }})">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <input type="hidden" name="timestamp" value="{{ row['timestamp'] }}">
-                            <input type="hidden" name="cpu" value="{{ row['cpu_percent'] }}">
-                            <input type="hidden" name="ram" value="{{ row['ram_percent'] }}">
-                            <input type="hidden" name="disk" value="{{ row['disk_percent'] }}">
-                            <button type="submit" class="ignore-button">👀 Görmezden Gel</button>
+                            <button type="submit" class="btn btn-ignore">👀 Görmezden Gel</button>
                         </form>
                     </div>
                 </div>
             {% endfor %}
         {% else %}
-            <p>✅ Şu anda anomali bulunmuyor.</p>
+            <p class="no-anomalies">✅ Şu anda gösterilecek aktif anomali bulunmuyor.</p>
         {% endif %}
     </div>
 
-    <div class="page-navigation-buttons"> {# Yeni butonlar için div #}
-        <a href="/" class="btn-navigation">⬅ Geri Dön</a>
-        <a href="/history" class="btn-navigation">📊 Metrik Geçmişini Gör</a> {# Yeni buton #}
+    <div class="navigation-buttons">
+        <a href="/" class="btn btn-nav">⬅ Ana Sayfaya Dön</a>
+        <a href="/history" class="btn btn-nav">📊 Metrik Geçmişini Gör</a>
     </div>
 
 <script>
-    // Canlı Metrikler Grafiği (Mevcut)
+ // Canlı Metrikler Grafiği (Mevcut)
     const labels = [];
     const cpuData = [];
     const ramData = [];
@@ -109,55 +111,80 @@
         });
     }
 
-    setInterval(fetchData, 2000);
+    setInterval(fetchData, 1000);
 
-    // İşlemi Sonlandır formu için olay dinleyicisi
-    document.querySelectorAll(".kill-form").forEach(form => {
-        form.addEventListener("submit", function(e) {
-            e.preventDefault();
-            const formData = new FormData(form);
-            const cardId = form.getAttribute("data-id");
-            showPopup('İşlem sonlandırılıyor...');
-            fetch("/killprocess", { method: "POST", body: formData }).then(r => r.json()).then(data => {
-                showPopup(data.message);
-                const card = document.getElementById(cardId);
-                if (card) card.remove();
-            }).catch(error => {
-                showPopup("İşlem sonlandırılırken bir hata oluştu.");
-                console.error('Error:', error);
-            });
-        });
-    });
-
-    // Görmezden Gel formu için olay dinleyicisi
-    document.querySelectorAll(".ignore-form").forEach(form => {
-        form.addEventListener("submit", function(e) {
-            e.preventDefault();
-            const formData = new FormData(form);
-            const cardId = form.getAttribute("data-id");
-            showPopup('Anomali uyarısı görmezden geliniyor...');
-            fetch("/ignore_anomaly", { method: "POST", body: formData }).then(r => r.json()).then(data => {
-                showPopup(data.message);
-                const card = document.getElementById(cardId);
-                if (card) card.remove();
-            }).catch(error => {
-                showPopup("Anomali uyarısı görmezden gelinirken bir hata oluştu.");
-                console.error('Error:', error);
-            });
-        });
-    });
-
-    function showPopup(message) {
+    // Pop-up ve diğer form fonksiyonları (değişiklik yok)
+    function showPopup(message, type = 'info') {
         const popup = document.getElementById('popup');
-        popup.innerText = message;
-        popup.style.display = 'block';
-        popup.classList.add('show'); 
-        setTimeout(() => { 
-            popup.classList.remove('show'); 
-            setTimeout(() => { popup.style.display = 'none'; }, 300); 
-        }, 3000); 
+        popup.textContent = message;
+        popup.className = type;
+        popup.classList.add('show');
+        setTimeout(() => popup.classList.remove('show'), 4000);
     }
 
+    // İşlem sonlandırma fonksiyonu
+    // templates/anomaly_page.html içindeki DÜZELTİLMİŞ killProcess fonksiyonu
+
+    async function killProcess(event, pid) {
+    event.preventDefault(); // Formun sayfayı yenilemesini engelle
+    const form = event.target;
+    const csrfToken = form.querySelector('input[name="csrf_token"]').value;
+
+    // Veriyi FormData ile göndermek daha güvenilirdir
+    const formData = new FormData();
+    formData.append('csrf_token', csrfToken);
+    formData.append('pid', pid);
+
+    showPopup('İşlem sonlandırılıyor...', 'info');
+
+    try {
+        const response = await fetch('/killprocess', {
+            method: 'POST',
+            body: formData // CSRF token ve PID'yi gönder
+        });
+        const data = await response.json(); // Yanıtı JSON olarak oku
+        
+        // Gelen mesaja göre pop-up göster
+        showPopup(data.message, response.ok ? 'success' : 'error');
+        
+        // Eğer işlem başarılıysa, anomali kartını sayfadan kaldır
+        if (response.ok) {
+            const card = form.closest('.anomaly-card');
+            if(card) {
+                card.style.transition = 'opacity 0.5s ease';
+                card.style.opacity = '0';
+                setTimeout(() => card.remove(), 500);
+            }
+        }
+    } catch (error) {
+        // Bu hata genellikle ağ hatası veya JSON parse hatasıdır.
+        console.error('Kill Process isteği başarısız:', error);
+        showPopup('İstek gönderilirken bir ağ hatası oluştu.', 'error');
+    }
+}
+    
+    // Anomaliyi görmezden gelme fonksiyonu
+    async function ignoreAnomaly(event, anomalyId) {
+        event.preventDefault();
+        const form = event.target;
+        const csrfToken = form.querySelector('input[name="csrf_token"]').value;
+
+        showPopup('Anomali yoksayılıyor...', 'info');
+        try {
+            const response = await fetch(`/ignore_anomaly/${anomalyId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `csrf_token=${csrfToken}`
+            });
+            const data = await response.json();
+            showPopup(data.message, response.ok ? 'success' : 'error');
+            if (response.ok) {
+                document.getElementById(`anomaly-card-${anomalyId}`)?.remove();
+            }
+        } catch (error) {
+            showPopup('İstek gönderilirken hata oluştu.', 'error');
+        }
+    }
 </script>
 
 </body>
