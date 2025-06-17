@@ -1,6 +1,5 @@
-# OptiGuard: Sunucu İzleme ve Anomali Tespit Paneli
+# OptiGuard: Gerçek Zamanlı Sunucu İzleme ve Proaktif Optimizasyon Sistemi
 
-![Ana Sayfa Ekran Görüntüsü](AnaSayfa.png)
 
 OptiGuard, Python ve Flask kullanılarak geliştirilmiş, web tabanlı bir sunucu izleme ve proaktif optimizasyon sistemidir. Sistem yöneticilerinin sunucu kaynaklarını (CPU, RAM, Disk, Ağ) anlık olarak takip etmesini, anormal aktiviteleri tespit etmesini ve olası sorunlara anında müdahale etmesini sağlamak amacıyla tasarlanmıştır. Bu proje, bir bitirme projesi olarak geliştirilmiştir.
 
