@@ -46,9 +46,25 @@
             <label>Log Tutma Süresi (Gün)</label>
             <input type="number" name="log_retention_days" value="{{ config_settings.LOG_RETENTION_DAYS }}" required>
 
-            <label>Varsayılan Ağ Arayüzü</label>
-            <input type="text" name="default_network_interface" value="{{ config_settings.DEFAULT_NETWORK_INTERFACE }}" placeholder="örn: eth0" required>
-        </div>
+            <div class="form-section">
+            <h3>Yapılandırma</h3>
+
+            <div class="form-group">
+                <label for="default_network_interface">Varsayılan Ağ Arayüzü</label>
+                <input type="text" id="default_network_interface" name="default_network_interface" value="{{ config_settings.DEFAULT_NETWORK_INTERFACE }}" required>
+                <p class="helper-text">İzlenecek ana ağ kartının adı (örn: lo, ens5).</p>
+            </div>
+
+            <div class="form-group">
+                <label for="anomaly_detection_method">Anomali Tespit Yöntemi</label>
+                <select id="anomaly_detection_method" name="anomaly_detection_method">
+                    <option value="threshold" {% if config_settings.get('ANOMALY_DETECTION_METHOD') == 'threshold' %}selected{% endif %}>Eşik Değeri (%)</option>
+                    <option value="ml" {% if config_settings.get('ANOMALY_DETECTION_METHOD') == 'ml' %}selected{% endif %}>Makine Öğrenmesi (ML)</option>
+                </select>
+                <p class="helper-text">ML yöntemi, sistemin normal davranışını öğrenerek anomali tespiti yapar.</p>
+            </div>
+            </div>
+            </div>
 
 
         <button type="submit">Kaydet</button>

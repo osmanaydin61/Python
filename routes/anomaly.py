@@ -10,30 +10,47 @@ from utils.anomaly_detector import is_critical_process
 
 anomaly_routes = Blueprint('anomaly', __name__)
 
+# routes/anomaly.py içindeki eski anomaly_page fonksiyonunu bununla değiştirin
+
 @anomaly_routes.route('/anomali')
 @login_required
 def anomaly_page():
-    """Veritabanından 'is_anomaly' ve 'is_ignored' false olan son 5 kaydı çeker."""
+    """
+    Veritabanından 'is_anomaly' olanları çeker ve
+    'N/A' olan ML anomalilerini filtreleyerek gösterir.
+    """
     try:
         anomalies_from_db = db.session.query(Metric).filter(
             Metric.is_anomaly == True,
             Metric.is_ignored == False
-        ).order_by(Metric.timestamp.desc()).limit(5).all() # <-- DEĞİŞİKLİK: Sadece son 5 kaydı al
+        ).order_by(Metric.timestamp.desc()).limit(10).all()
 
         active_anomalies = []
         for anomaly in anomalies_from_db:
-            # PID'si olan ve hala çalışan ve kritik olmayan işlemleri filtrele
+            
+            # --- YENİ FİLTRELEME KURALI ---
+            # Eğer anomali "ML" kaynaklıysa VE bir işlem PID'si yoksa (N/A ise),
+            # bu döngüyü atla ve bu kartı listeye ekleme.
+            if 'ML' in (anomaly.anomaly_type or "") and not anomaly.pid:
+                continue
+            # --------------------------------
+            
+            # Mevcut mantık: PID'si olan ve hala çalışan işlemleri listeye ekle
             if anomaly.pid and psutil.pid_exists(anomaly.pid):
-                if not is_critical_process(process_name=anomaly.process_name):
+                if not is_critical_process({'name': anomaly.process_name}): # Basitleştirilmiş kontrol
                     active_anomalies.append(anomaly)
-            # PID'si olmayan disk anomalileri gibi durumları da göster
+            
+            # PID'si olmayan ama ML kaynaklı da olmayanları (örn: Disk) göster
             elif not anomaly.pid:
                  active_anomalies.append(anomaly)
         
-        return render_template('anomaly_page.html', anomalies=active_anomalies)
+        # Sonuçları sadece 5 ile sınırla
+        final_anomalies = active_anomalies[:5]
+
+        return render_template('anomaly_page.html', anomalies=final_anomalies)
 
     except Exception as e:
-        print(f"Error fetching anomalies from DB: {e}")
+        print(f"Anomali sayfası yüklenirken hata: {e}")
         flash('Anomaliler yüklenirken bir hata oluştu.', 'danger')
         return render_template('anomaly_page.html', anomalies=[])
 

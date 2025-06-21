@@ -31,9 +31,7 @@
                             <span>💾 RAM: {{ "%.2f"|format(anomaly.ram_percent) }}%</span>
                             <span>📀 Disk: {{ "%.2f"|format(anomaly.disk_percent) }}%</span>
                         </p>
-                        {% if anomaly.anomaly_image %}
-                            <a href="{{ url_for('static', filename='anomalies/' + anomaly.anomaly_image) }}" target="_blank">Anomali Grafiğini Gör</a>
-                        {% endif %}
+                        
                     </div>
                     <div class="card-actions">
                         <form class="kill-form" onsubmit="killProcess(event, {{ anomaly.pid }})">

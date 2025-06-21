@@ -160,23 +160,27 @@ def background_thread():
 def kill_process():
     pid = request.form.get('pid', type=int)
     if not pid:
-        log_warning("Kill Process: Sonlandırılacak işlem için PID gönderilmedi.")
+        log_warning("Kill Process: Geçersiz PID gönderildi.")
         return jsonify({"message": "❌ Geçersiz işlem kimliği."}), 400
 
     try:
+        # Gerekli tüm bilgileri en başta tek seferde alalım
         proc = psutil.Process(pid)
-        
-        # Güvenlik Kontrolleri
-        if proc.pid == os.getpid():
+        proc_info = proc.as_dict(attrs=['pid', 'name', 'username', 'cmdline'])
+
+        # Güvenlik Kontrolü 1: Kendi uygulamasını sonlandırmayı engelle
+        if proc_info.get('pid') == os.getpid():
             log_warning(f"Kill Process: Kendi uygulamasını (PID: {pid}) sonlandırma engellendi.")
             return jsonify({"message": "⚠️ Kendi çalışan uygulamanızı sonlandıramazsınız."}), 403
             
-        if is_critical_process(proc.name(), proc.cmdline(), proc.username()):
-            log_warning(f"Kill Process: Kritik süreç '{proc.name()}' (PID: {pid}) sonlandırma engellendi.")
-            return jsonify({"message": f"⚠️ '{proc.name()}' kritik bir sistem sürecidir, sonlandırılamaz."}), 403
+        # Güvenlik Kontrolü 2: Kritik süreçleri kontrol et (DÜZELTİLMİŞ ÇAĞRI)
+        # Artık fonksiyona tek bir bilgi paketi (proc_info) gönderiyoruz.
+        if is_critical_process(proc_info):
+            log_warning(f"Kill Process: Kritik süreç '{proc_info.get('name')}' (PID: {pid}) sonlandırma engellendi.")
+            return jsonify({"message": f"⚠️ '{proc_info.get('name')}' kritik bir sistem sürecidir, sonlandırılamaz."}), 403
 
         # İşlemi Sonlandır
-        proc_name = proc.name()
+        proc_name = proc_info.get('name', 'N/A')
         proc.terminate()
         try:
             proc.wait(timeout=3) # İşlemin sonlanması için 3 saniye bekle
@@ -190,8 +194,8 @@ def kill_process():
     except psutil.NoSuchProcess:
         log_warning(f"Kill Process: Sonlandırılmak istenen işlem (PID: {pid}) zaten mevcut değil.")
         return jsonify({"message": f"🤷‍♀️ İşlem (PID: {pid}) zaten çalışmıyor."}), 404
-    except psutil.AccessDenied:
-        log_error(f"Kill Process: İşlem (PID: {pid}) için erişim engellendi.")
+    except psutil.AccessDenied as e:
+        log_error(f"Kill Process: İşlem (PID: {pid}) için erişim engellendi. Hata: {e}")
         return jsonify({"message": f"❌ Yetki Hatası: İşlemi (PID: {pid}) sonlandırma izniniz yok."}), 403
     except Exception as e:
         log_error(f"Kill Process: Beklenmedik bir hata oluştu: {e}")
