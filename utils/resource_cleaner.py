@@ -2,16 +2,15 @@
 
 import psutil
 import os
-import signal
-from utils.anomaly_detector import is_critical_process # is_critical_process'i import ediyoruz
-from routes.logs import log_info, log_warning, log_error # Loglama fonksiyonlarını import ediyoruz
-import getpass # current_user için
+from utils.anomaly_detector import is_critical_process 
+from routes.logs import log_info, log_warning, log_error 
+import getpass 
 from flask import current_app
 def clean_ram():
     threshold = current_app.config.get('RAM_CLEAN_THRESHOLD', 20.0)
     killed = []
     skipped = []
-    current_user = getpass.getuser() # Mevcut kullanıcıyı alıyoruz
+    current_user = getpass.getuser() 
     
     for proc in psutil.process_iter(['pid', 'name', 'memory_percent', 'cmdline', 'username']):
         try:
@@ -34,10 +33,6 @@ def clean_ram():
                     log_warning(f"RAM Temizle: Kritik sistem süreci ({proc_name}) sonlandırma isteği atlandı.")
                     continue
 
-                # 3. Sadece mevcut kullanıcının çalıştırdığı işlemleri hedefle (root veya farklı kullanıcılar için kapatmayı engelle)
-                # Bu kuralı çok dikkatli düşünün. Eğer sunucuyu sadece kendi kullanıcınızla yönetiyorsanız mantıklıdır.
-                # Ancak farklı servisler farklı kullanıcılar altında çalışıyorsa, onları yönetemeyebilirsiniz.
-                # Şimdilik güvenli bir yaklaşım olarak kendi kullanıcınızın süreçlerini hedefleyelim.
                 if proc_username == current_user:
                     try:
                         target_proc = psutil.Process(proc_pid)
@@ -74,10 +69,10 @@ def clean_ram():
 
     msg_parts = []
     if killed:
-        msg_parts.append(f"✅ RAM temizlendi. Kapatılanlar: " + ", ".join(killed))
+        msg_parts.append(f"RAM temizlendi. Kapatılanlar: " + ", ".join(killed))
     if skipped:
-        msg_parts.append(f"⚠️ Atlananlar: " + ", ".join(skipped))
+        msg_parts.append(f"Atlananlar: " + ", ".join(skipped))
     if not msg_parts:
-        msg_parts.append("✅ Kapatılacak işlem yok.")
+        msg_parts.append("Kapatılacak işlem yok.")
     
     return "<br>".join(msg_parts) # HTML'e uygun şekilde birleştiriyoruz

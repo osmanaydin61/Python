@@ -69,7 +69,7 @@ Projeyi yerel makinenizde çalıştırmak için aşağıdaki adımları izleyin:
 
     # İlk kullanıcı bilgileri
     ADMIN_USER_EMAIL='admin@example.com'
-    ADMIN_USER_PASSWORD='guclu_bir_sifre_123'
+    ADMIN_USER_PASSWORD='guclu_bir_sifre_'
     READONLY_USER_EMAIL='readonly@example.com'
     READONLY_USER_PASSWORD='baska_bir_sifre'
 
@@ -86,16 +86,9 @@ Projeyi yerel makinenizde çalıştırmak için aşağıdaki adımları izleyin:
     ```bash
     python3 panel.py
     ```
-    Uygulama artık `http://13.48.193.0:8080` (veya belirlediğiniz portta) çalışıyor olacaktır. İlk çalıştırmada, `instance/site.db` adında bir veritabanı dosyası ve varsayılan kullanıcılar otomatik olarak oluşturulacaktır.
+    Uygulama artık `http://13.48.193.0:8080` (IP kullandığınız işletim sistemine göre değişir) çalışıyor olacaktır. İlk çalıştırmada, `instance/site.db` adında bir veritabanı dosyası ve varsayılan kullanıcılar otomatik olarak oluşturulacaktır.
 
 ## ⚙️ Yapılandırma
 
 Sistemin çoğu ayarı (alarm eşikleri, otomatik müdahale modu vb.), admin olarak giriş yaptıktan sonra "Ayarlar" sayfası üzerinden kolayca yapılandırılabilir.
 
-## 🤝 Katkıda Bulunma
-
-Katkıda bulunmak isterseniz, lütfen bir "issue" açın veya bir "pull request" gönderin. Tüm katkılara açığız!
-
-## 📄 Lisans
-
-Bu proje MIT Lisansı altında lisanslanmıştır. Daha fazla bilgi için `LICENSE` dosyasına bakın.

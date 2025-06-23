@@ -1,16 +1,10 @@
 // static/history_charts.js
 
-// history_page.html dosyasında global olarak tanımlanan değişkenleri kullan
-// const historyData;
-// const hourlyAnomalyData;
-// const dailyAnomalyData;
-
-// Metrik Geçmişi Grafikleri
 const cpuHistoryChartCtx = document.getElementById('cpuHistoryChart').getContext('2d');
 new Chart(cpuHistoryChartCtx, {
     type: 'line',
     data: {
-        // Doğrudan global JavaScript değişkenlerini kullanıyoruz
+        
         labels: historyData.timestamps,
         datasets: [{
             label: 'CPU (%)',
@@ -28,10 +22,8 @@ new Chart(cpuHistoryChartCtx, {
             y: { beginAtZero: true, max: 100, title: { display: true, text: 'Kullanım (%)' } },
             x: { title: { display: true, text: 'Zaman Damgası' },
                  ticks: {
-                 maxRotation: 45, // Etiketleri 45 derece döndür
+                 maxRotation: 45, 
                  minRotation: 45,
-                 // autoSkip: true, // Otomatik etiket atlamayı etkinleştir (varsayılan olarak genelde açık)
-                 // maxTicksLimit: 10 // En fazla 10 etiket göster (isteğe bağlı)
             } }
         },
         plugins: { legend: { display: true }, title: { display: true, text: 'CPU Kullanım Geçmişi' } }

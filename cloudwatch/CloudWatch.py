@@ -38,28 +38,28 @@ def should_send_email():
 
 # 📧 E-posta uyarı fonksiyonu
 # E-posta uyarı fonksiyonu
-def send_email_alert(receiver_email, subject, body): # ALICI E-POSTAYI PARAMETRE OLARAK EKLEDİK
+def send_email_alert(receiver_email, subject, body):
     sender = "losmanaydin61@gmail.com"  # Bunu da .env'den alabilirsiniz: os.getenv("SENDER_EMAIL")
     password = os.getenv("EMAIL_SENDER_PASSWORD")
 
     if not password:
         print("E-posta gönderim hatası: EMAIL_SENDER_PASSWORD ortam değişkeni ayarlanmamış.")
         return
-    if not receiver_email: # Alıcı e-posta adresi var mı kontrol edelim
+    if not receiver_email:
         print("E-posta gönderim hatası: Alıcı e-posta adresi belirtilmemiş.")
         return
 
     msg = MIMEMultipart()
     msg['From'] = sender
-    msg['To'] = receiver_email # ARTIK PARAMETREDEN GELENİ KULLANIYORUZ
+    msg['To'] = receiver_email
     msg['Subject'] = subject
-    msg.attach(MIMEText(body, 'plain'))
+    msg.attach(MIMEText(body, 'plain', _charset='utf-8')) # Hata almamak için _charset='utf-8' eklemeyi unutmayın!
 
     try:
         with smtplib.SMTP("smtp.gmail.com", 587) as server:
             server.starttls()
             server.login(sender, password)
-            server.sendmail(sender, receiver_email, msg.as_string()) # BURAYI DA GÜNCELLEDİK
+            server.sendmail(sender, receiver_email, msg.as_string())
         print(f"📧 E-posta {receiver_email} adresine gönderildi!")
     except Exception as e:
         print(f"E-posta gönderim hatası ({receiver_email}):", e)
@@ -109,7 +109,7 @@ def check_and_alert(metrics):
         alerts.append("⚠️ CPU kullanımı yüksek: {:.2f}%".format(metrics["CPU Usage"]))
     if metrics["RAM Usage"] > 95:
         alerts.append("⚠️ RAM kullanımı yüksek: {:.2f}%".format(metrics["RAM Usage"]))
-    if metrics["Disk Usage"] > 90:
+    if metrics["Disk Usage"] > 95:
         alerts.append("⚠️ Disk kullanımı yüksek: {:.2f}%".format(metrics["Disk Usage"]))
 
     if alerts:
@@ -143,4 +143,3 @@ if __name__ == "__main__":
     send_to_cloudwatch(metrics)
     check_and_alert(metrics)
     plot_metrics(metrics)
-    

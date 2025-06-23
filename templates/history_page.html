@@ -38,14 +38,14 @@
 
     <a href="/">⬅ Geri Dön</a>
 
-    {# BURASI ÇOK ÖNEMLİ: Veriyi HTML içinde JS'e aktaran script bloğu #}
+    
     <script>
         const historyData = {{ data_json | safe }};
         const hourlyAnomalyData = {{ hourly_anomaly_json | safe }};
         const dailyAnomalyData = {{ daily_anomaly_json | safe }};
     </script>
 
-    {# Kendi JavaScript kodumuzun olduğu harici dosya #}
+    
     {# Bu dosya, yukarıdaki script bloğundan SONRA yüklenmeli ki değişkenlere erişebilsin. #}
     <script src="{{ url_for('static', filename='history_charts.js') }}"></script>
 </body>

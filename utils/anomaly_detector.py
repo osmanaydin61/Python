@@ -134,7 +134,7 @@ def _create_anomaly_plot(filepath: str, anomaly_type: str, cpu_val, ram_val, dis
     plt.close()
 
 
-# --- ANA PUBLİK FONKSİYON ---
+# --- ANA FONKSİYON ---
 
 def detect_and_log_anomaly(cpu_val, ram_val, disk_val) -> dict | None:
     """
@@ -142,14 +142,11 @@ def detect_and_log_anomaly(cpu_val, ram_val, disk_val) -> dict | None:
     tespit yapar ve gerekirse rapor oluşturur.
     """
     anomaly_type = None
-    
-    # method_setting = Setting.query.filter_by(key='ANOMALY_DETECTION_METHOD').first()
-    # detection_method = method_setting.value.strip() if method_setting else 'threshold'
     detection_method = 'threshold'
     if detection_method == 'ml':
         if _run_ml_detection(cpu_val, ram_val, disk_val):
             anomaly_type = 'ML - Isolation Forest Anomalisi'
-    else: # 'threshold' veya tanımsız ise
+    else: 
         anomaly_type = _run_threshold_detection(cpu_val, ram_val, disk_val)
 
     # Eğer bir anomali tespit edildiyse, raporlama işlemlerini yap

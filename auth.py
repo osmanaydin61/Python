@@ -71,11 +71,12 @@ def login():
         else:
             print(f"DEBUG: Veritabanında {User.query.count()} kullanıcı mevcut. Otomatik kullanıcı oluşturma atlandı.")
 
+# Giriş kontrol
     if request.method == "POST":
         email_form = request.form.get("email")
         password_form = request.form.get("password")
 
-        with current_app.app_context(): # DB sorguları için bağlam
+        with current_app.app_context(): 
             user = User.query.filter_by(email=email_form).first()
 
             if user and user.check_password(password_form):

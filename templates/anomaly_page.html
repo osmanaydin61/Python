@@ -56,7 +56,7 @@
     </div>
 
 <script>
- // Canlı Metrikler Grafiği (Mevcut)
+ // Canlı Metrikler Grafiği 
     const labels = [];
     const cpuData = [];
     const ramData = [];
@@ -111,7 +111,7 @@
 
     setInterval(fetchData, 1000);
 
-    // Pop-up ve diğer form fonksiyonları (değişiklik yok)
+    // Pop-up ve diğer form fonksiyonları 
     function showPopup(message, type = 'info') {
         const popup = document.getElementById('popup');
         popup.textContent = message;
@@ -121,14 +121,14 @@
     }
 
     // İşlem sonlandırma fonksiyonu
-    // templates/anomaly_page.html içindeki DÜZELTİLMİŞ killProcess fonksiyonu
+
 
     async function killProcess(event, pid) {
     event.preventDefault(); // Formun sayfayı yenilemesini engelle
     const form = event.target;
     const csrfToken = form.querySelector('input[name="csrf_token"]').value;
 
-    // Veriyi FormData ile göndermek daha güvenilirdir
+
     const formData = new FormData();
     formData.append('csrf_token', csrfToken);
     formData.append('pid', pid);
@@ -138,7 +138,7 @@
     try {
         const response = await fetch('/killprocess', {
             method: 'POST',
-            body: formData // CSRF token ve PID'yi gönder
+            body: formData 
         });
         const data = await response.json(); // Yanıtı JSON olarak oku
         

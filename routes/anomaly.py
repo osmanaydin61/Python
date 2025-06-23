@@ -27,25 +27,22 @@ def anomaly_page():
 
         active_anomalies = []
         for anomaly in anomalies_from_db:
-            
-            # --- YENİ FİLTRELEME KURALI ---
             # Eğer anomali "ML" kaynaklıysa VE bir işlem PID'si yoksa (N/A ise),
             # bu döngüyü atla ve bu kartı listeye ekleme.
             if 'ML' in (anomaly.anomaly_type or "") and not anomaly.pid:
                 continue
-            # --------------------------------
             
-            # Mevcut mantık: PID'si olan ve hala çalışan işlemleri listeye ekle
+            # PID'si olan ve hala çalışan işlemleri listeye ekle
             if anomaly.pid and psutil.pid_exists(anomaly.pid):
                 if not is_critical_process({'name': anomaly.process_name}): # Basitleştirilmiş kontrol
                     active_anomalies.append(anomaly)
             
-            # PID'si olmayan ama ML kaynaklı da olmayanları (örn: Disk) göster
+            # PID'si olmayan ama ML kaynaklı da olmayanları göster
             elif not anomaly.pid:
                  active_anomalies.append(anomaly)
         
-        # Sonuçları sadece 5 ile sınırla
-        final_anomalies = active_anomalies[:5]
+        # Sonuçları sadece 2 ile sınırla
+        final_anomalies = active_anomalies[:2]
 
         return render_template('anomaly_page.html', anomalies=final_anomalies)
 

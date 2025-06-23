@@ -41,7 +41,7 @@ def history_page():
             hourly_group_expression, func.count(Metric.id)
         ).filter(
             Metric.is_anomaly == True, Metric.timestamp >= time_filter_72h
-        ).group_by(hourly_group_expression).order_by(hourly_group_expression).all() # <-- DEĞİŞİKLİK
+        ).group_by(hourly_group_expression).order_by(hourly_group_expression).all() 
         hourly_trend_data = [{"time": row[0], "count": row[1]} for row in hourly_results]
 
         # 3. Günlük Anomali Trend Verisini Çek (Son 30 gün)
@@ -51,7 +51,7 @@ def history_page():
             daily_group_expression, func.count(Metric.id)
         ).filter(
             Metric.is_anomaly == True, Metric.timestamp >= time_filter_30d
-        ).group_by(daily_group_expression).order_by(daily_group_expression).all() # <-- DEĞİŞİKLİK
+        ).group_by(daily_group_expression).order_by(daily_group_expression).all() 
         daily_trend_data = [{"time": row[0], "count": row[1]} for row in daily_results]
 
         # Tüm verileri JSON'a çevirip şablona gönder

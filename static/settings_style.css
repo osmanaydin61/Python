@@ -58,12 +58,6 @@ form button {
 form button:hover {
     background-color: #009baa; /* Buton hover rengi */
 }
-form button.testmail {
-    background-color: #3498db; /* Test mail butonu rengi (mavi) */
-}
-form button.testmail:hover {
-    background-color: #2980b9;
-}
 
 /* Mesaj geri bildirimleri (başarı/hata) */
 .message-feedback {
@@ -121,10 +115,6 @@ form button.testmail:hover {
     text-decoration: underline;
 }
 
-/* Kullanıcı Yönetimi sayfasına özgü stiller (user_management_style.css'e taşındı) */
-/* Bu bölümde KULLANICI YÖNETİMİNE AİT HİÇBİR STİL KALMAMALI */
-/* Örneğin, .user-table, .add-user-form gibi stiller burada olmamalıdır. */
-/* Gelişmiş Ayarlar Gizleme/Gösterim Stilleri */
 
 
 .advanced-settings-content {
@@ -132,7 +122,7 @@ form button.testmail:hover {
     overflow: hidden; /* Gizli içerik taşmasın */
     transition: max-height 0.3s ease-out; /* Açılış animasyonu */
     max-height: 0; /* Animasyon için başlangıç değeri */
-    /* opacity: 0; */ /* Opaklık da eklenebilir, ancak max-height daha çok tercih edilir */
+   
 }
 .advanced-settings-content.show {
     display: block; /* Açıldığında blok olarak göster */

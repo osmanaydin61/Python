@@ -6,8 +6,6 @@ from flask import render_template
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-# --- Loglama Ayarları ve Fonksiyonları ---
-
 # Proje kök dizinini ve log dosyasının yolunu belirle
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 LOG_FOLDER_PATH = os.path.join(PROJECT_ROOT, "logs")
@@ -20,15 +18,12 @@ os.makedirs(LOG_FOLDER_PATH, exist_ok=True)
 class TimezoneFormatter(logging.Formatter):
     """Log kayıt zamanını yerel saat dilimine çeviren formatlayıcı."""
     def formatTime(self, record, datefmt=None):
-        # Log kaydının oluşturulma zamanını alıp İstanbul saatine çevir
         dt = datetime.fromtimestamp(record.created, ZoneInfo("Europe/Istanbul"))
         if datefmt:
             return dt.strftime(datefmt)
         else:
-            # Eğer format belirtilmemişse ISO formatında döndür
             return dt.isoformat()
 
-# logging.basicConfig() yerine daha detaylı bir yapılandırma kullanıyoruz
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -47,8 +42,6 @@ if not logger.handlers:
     # Handler'ı ana logger'a ekle
     logger.addHandler(file_handler)
 
-
-# Bu fonksiyonlar aynı kalır, çünkü genel logger'ı kullanırlar
 def log_info(message):
     logging.info(message)
 
@@ -58,7 +51,7 @@ def log_warning(message):
 def log_error(message):
     logging.error(message)
 
-# Bu route'lar da aynı kalır
+
 def get_logs_page():
     try:
         return render_template('logs_page.html')

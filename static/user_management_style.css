@@ -21,15 +21,13 @@
         .user-actions button {
             padding: 5px 10px;
             font-size: 0.9em;
-            margin-top: 0; /* Üstteki buton stilini ezebilir */
+            margin-top: 0; 
             cursor: pointer;
             border-radius: 4px;
             border: none;
             color: white;
             transition: background-color 0.3s ease;
         }
-        /* .edit-button { background-color: #2196f3; } */ /* Şimdilik düzenleme butonu yok */
-        /* .edit-button:hover { background-color: #1976d2; } */
         .delete-button { background-color: #e74c3c; }
         .delete-button:hover { background-color: #c0392b; }
 

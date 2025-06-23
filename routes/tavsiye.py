@@ -19,7 +19,7 @@ def tavsiye():
             category = request.form.get("category")
             
             if not tavsiye_metni:
-                message = "❌ Tavsiye metni boş olamaz."
+                message = "Tavsiye metni boş olamaz."
             else:
                 new_suggestion = Suggestion(
                     user_email=user_email,
@@ -31,7 +31,7 @@ def tavsiye():
                 )
                 db.session.add(new_suggestion)
                 db.session.commit()
-                message = "✅ Tavsiyeniz başarıyla gönderildi."
+                message = "Tavsiyeniz başarıyla gönderildi."
 
         # Admin Cevaplama
         elif request.method == "POST" and request.form.get("mode") == "cevap":
@@ -44,9 +44,9 @@ def tavsiye():
             original_suggestion = Suggestion.query.get(suggestion_id)
 
             if not original_suggestion:
-                message = "❌ Cevaplanacak tavsiye bulunamadı veya daha önce cevaplandı."
+                message = "Cevaplanacak tavsiye bulunamadı veya daha önce cevaplandı."
             elif not cevap_text:
-                message = "❌ Cevap metni boş olamaz."
+                message = "Cevap metni boş olamaz."
             else:
                 new_response = Response(
                     user_email=original_suggestion.user_email,
@@ -58,11 +58,11 @@ def tavsiye():
                 db.session.add(new_response)
                 
                 # Cevaplanan tavsiyeyi silmek yerine durumunu 'Cevaplandı' olarak güncelle
-                # ve 'Gelen Tavsiyeler' listesinde gösterme (listeleme mantığında filtreleyeceğiz)
                 original_suggestion.status = 'Cevaplandı' 
                 db.session.commit()
-                message = f"✅ Tavsiye '{original_suggestion.user_email}' tarafından başarıyla cevaplandı."
+                message = f"Tavsiye '{original_suggestion.user_email}' tarafından başarıyla cevaplandı."
 
+                # Kullanıcıya cevaplanan maili gönder
                 try:
                     recipient_email = original_suggestion.user_email
                     alert_enabled = current_app.config.get('ALARM_ENABLED', False)
@@ -78,7 +78,7 @@ def tavsiye():
                 except Exception as e:
                     message += f" (E-posta gönderilemedi: {str(e)})"
             
-        # Admin Durum/Öncelik Güncelleme (Zaten vardı)
+        # Admin Durum/Öncelik Güncelleme 
         elif request.method == "POST" and request.form.get("mode") == "update_status_priority":
             if session.get("role") != "admin":
                 return "Yetkisiz işlem.", 403
@@ -92,9 +92,9 @@ def tavsiye():
                 suggestion_to_update.status = new_status
                 suggestion_to_update.priority = new_priority
                 db.session.commit()
-                message = f"✅ Tavsiye ID:{suggestion_id} durumu '{new_status}', önceliği '{new_priority}' olarak güncellendi."
+                message = f"Tavsiye ID:{suggestion_id} durumu '{new_status}', önceliği '{new_priority}' olarak güncellendi."
             else:
-                message = "❌ Güncellenecek tavsiye bulunamadı."
+                message = "Güncellenecek tavsiye bulunamadı."
         
         # Admin Cevap Silme - YENİ ROUTE İŞLEMİ
         elif request.method == "POST" and request.form.get("mode") == "delete_response":
@@ -107,13 +107,13 @@ def tavsiye():
             if response_to_delete:
                 db.session.delete(response_to_delete)
                 db.session.commit()
-                message = f"✅ Cevap ID:{response_id} başarıyla silindi."
+                message = f"Cevap ID:{response_id} başarıyla silindi."
             else:
-                message = "❌ Silinecek cevap bulunamadı."
+                message = "Silinecek cevap bulunamadı."
 
 
         # Verileri veritabanından çek ve filtrele/sırala
-        # Adminler tüm tavsiyeleri (cevaplanmış olanlar hariç) ve tüm cevapları görür
+        # Adminler tüm tavsiyeleri ve cevapları görür
         if session.get("role") == "admin":
             # Sadece 'Cevaplandı' durumunda olmayan tavsiyeleri göster
             tavsiyeler_query = Suggestion.query.filter(Suggestion.status != 'Cevaplandı').order_by(Suggestion.timestamp.desc()).all()
@@ -139,7 +139,7 @@ def tavsiye():
         cevaplar = []
         for c in cevaplar_query:
             cevaplar.append({
-                'id': c.id, # Cevap ID'sini de gönder
+                'id': c.id, 
                 'user': c.user_email,
                 'tavsiye': c.tavsiye_text,
                 'tavsiye_tarih': c.tavsiye_timestamp.strftime("%Y-%m-%d %H:%M:%S"),

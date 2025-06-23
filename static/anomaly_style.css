@@ -90,15 +90,6 @@ canvas {
     font-family: monospace;
 }
 
-.card-body a {
-    color: #3498db;
-    text-decoration: none;
-    font-size: 0.9em;
-}
-.card-body a:hover {
-    text-decoration: underline;
-}
-
 .card-actions {
     margin-top: 15px;
     display: flex;

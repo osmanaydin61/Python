@@ -4,14 +4,14 @@ import time
 import threading
 import logging
 import psutil
-from flask import Flask, jsonify, request, redirect, url_for, current_app
+from flask import Flask, jsonify, request, current_app
 from dotenv import load_dotenv
 import getpass
 load_dotenv()
 
 # Önce eklentileri ve modelleri import et
 from extensions import db, csrf, mail, bcrypt
-from models import Metric, User, Setting, NetworkMetric, Suggestion, Response, Message
+from models import Metric, Setting
 
 # Sonra diğerlerini
 from datetime import datetime, UTC
@@ -51,7 +51,6 @@ app.register_blueprint(network_routes)
 app.register_blueprint(user_management_routes)
 
 # Global veriler
-# anomaly_records = [] # Kaldırıldı
 metrics = {"cpu": 0, "ram": 0, "disk": 0} 
 prev_net_io = psutil.net_io_counters(pernic=True)
 last_net_time = time.time()
@@ -123,7 +122,7 @@ def background_thread():
                 
                 # Eğer anomali tespit edildiyse, metrik kaydına anomali bilgilerini ekle
                 if anomaly_data:
-                    # 'anomaly' anahtarı yerine 'is_anomaly' kullanıyoruz
+                    
                     metric_entry.is_anomaly = anomaly_data.get('is_anomaly', False)
                     metric_entry.anomaly_type = anomaly_data.get('anomaly_type')
                     metric_entry.pid = anomaly_data.get('pid')
@@ -135,7 +134,7 @@ def background_thread():
                 db.session.add(metric_entry)
                 db.session.commit()
                 # Otomatik müdahale modu kontrolü
-                # 'anomaly' anahtarı yerine 'is_anomaly' kullanıyoruz
+                
                 if anomaly_data and anomaly_data.get('is_anomaly'):
                     log_info(f"Anomali tespit edildi: Tip: {anomaly_data['anomaly_type']}")
                     if current_app.config.get('AGGRESSIVE_MODE', False):
@@ -173,7 +172,7 @@ def kill_process():
             log_warning(f"Kill Process: Kendi uygulamasını (PID: {pid}) sonlandırma engellendi.")
             return jsonify({"message": "⚠️ Kendi çalışan uygulamanızı sonlandıramazsınız."}), 403
             
-        # Güvenlik Kontrolü 2: Kritik süreçleri kontrol et (DÜZELTİLMİŞ ÇAĞRI)
+        
         # Artık fonksiyona tek bir bilgi paketi (proc_info) gönderiyoruz.
         if is_critical_process(proc_info):
             log_warning(f"Kill Process: Kritik süreç '{proc_info.get('name')}' (PID: {pid}) sonlandırma engellendi.")

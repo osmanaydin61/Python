@@ -44,11 +44,6 @@
                 .login-container button:hover {
                     background-color: #3b5bdb;
                 }
-                .login-container .lock-icon {
-                    font-size: 40px;
-                    color: #4c6ef5;
-                    margin-bottom: 10px;
-                }
                 .error-message {
                     color: red;
                     margin-top: 10px;
