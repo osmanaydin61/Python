@@ -10,7 +10,7 @@ tavsiye_routes = Blueprint("tavsiye", __name__)
 @tavsiye_routes.route("/tavsiye", methods=["GET", "POST"])
 def tavsiye():
     message = ""
-    with current_app.app_context(): # Uygulama bağlamı içinde veritabanı işlemleri
+    with current_app.app_context(): 
 
         # Tavsiye Gönderme (Kullanıcı)
         if request.method == "POST" and request.form.get("mode") == "tavsiye":
@@ -96,7 +96,7 @@ def tavsiye():
             else:
                 message = "Güncellenecek tavsiye bulunamadı."
         
-        # Admin Cevap Silme - YENİ ROUTE İŞLEMİ
+        # Admin Cevap Silme
         elif request.method == "POST" and request.form.get("mode") == "delete_response":
             if session.get("role") != "admin":
                 return "Yetkisiz işlem.", 403
@@ -112,7 +112,7 @@ def tavsiye():
                 message = "Silinecek cevap bulunamadı."
 
 
-        # Verileri veritabanından çek ve filtrele/sırala
+        # Verileri veritabanından çek 
         # Adminler tüm tavsiyeleri ve cevapları görür
         if session.get("role") == "admin":
             # Sadece 'Cevaplandı' durumunda olmayan tavsiyeleri göster

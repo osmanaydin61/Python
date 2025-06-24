@@ -7,10 +7,9 @@ user_management_routes = Blueprint("user_management", __name__)
 
 @user_management_routes.route("/users", methods=["GET", "POST"])
 @login_required
-@roles_required('admin') # Sadece adminler bu sayfayı görebilir ve işlem yapabilir
+@roles_required('admin')
 def manage_users():
     add_message = ""
-    # Uygulama bağlamı içinde DB işlemleri
     with current_app.app_context():
         if request.method == "POST":
             action = request.form.get("action")
@@ -54,7 +53,6 @@ def manage_users():
 
         # Mevcut kullanıcıları veritabanından çek ve tabloya gönder
         users = User.query.all()
-        # Kullanıcıları listelerken şifre hashlerini göndermeyin
         users_for_template = [{'id': u.id, 'email': u.email, 'role': u.role} for u in users]
         
     return render_template('user_management_page.html', users=users_for_template, add_message=add_message)

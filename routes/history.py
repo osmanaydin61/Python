@@ -1,4 +1,4 @@
-# routes/history.py (Nihai ve Düzeltilmiş Hali)
+# routes/history.py
 
 from flask import Blueprint, render_template, jsonify, flash
 import json

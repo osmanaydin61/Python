@@ -14,15 +14,15 @@
             fetch('/getlogs')
                 .then(response => response.text())
                 .then(data => {
-                    // Logları satır satır ayır ve tersine çevir
-                    let lines = data.trim().split('\n').reverse(); // Satırları tersine çeviriyoruz
                     
-                    // Her satırı işleyip HTML içine yerleştiriyoruz
+                    let lines = data.trim().split('\n').reverse(); 
+                    
+                    // Her satırı işleyip HTML içine yerleştir
                     let formattedLogs = lines.map(line => {
                         return line.replace(/INFO/g, '<span class="info">INFO</span>')
                                    .replace(/WARNING/g, '<span class="warning">WARNING</span>')
                                    .replace(/ERROR/g, '<span class="error">ERROR</span>');
-                    }).join('\n'); // Tekrar birleştir
+                    }).join('\n'); 
 
                     document.getElementById('logContent').innerHTML = formattedLogs;
                 });

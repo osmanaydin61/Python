@@ -3,7 +3,7 @@
 import os
 from flask import Blueprint, render_template, request, redirect, url_for, session, current_app
 from functools import wraps
-from models import db, User # db ve User modelini import edin
+from models import db, User 
 
 auth_routes = Blueprint("auth", __name__)
 
@@ -34,7 +34,7 @@ def roles_required(role_param):
 @auth_routes.route("/login", methods=["GET", "POST"])
 def login():
     error = ""
-    with current_app.app_context(): # DB işlemleri için bağlam
+    with current_app.app_context(): 
         # Veritabanında hiç kullanıcı yoksa varsayılan kullanıcıları oluştur
         if User.query.count() == 0:
             # Admin kullanıcısını oluştur
@@ -52,7 +52,7 @@ def login():
             else:
                 print("DEBUG: ADMIN_USER_EMAIL veya ADMIN_USER_PASSWORD .env'de tanımlı değil, varsayılan admin oluşturulamadı.")
 
-            # READONLY kullanıcısını oluştur - YENİ EKLENDİ
+            # READONLY kullanıcısını oluştur
             readonly_email = os.getenv("READONLY_USER_EMAIL")
             readonly_password = os.getenv("READONLY_USER_PASSWORD")
             readonly_role = os.getenv("READONLY_USER_ROLE") or 'readonly'
@@ -67,7 +67,7 @@ def login():
             else:
                 print("DEBUG: READONLY_USER_EMAIL veya READONLY_USER_PASSWORD .env'de tanımlı değil, varsayılan readonly oluşturulamadı.")
 
-            db.session.commit() # Tüm yeni kullanıcıları tek bir commit ile kaydet
+            db.session.commit()
         else:
             print(f"DEBUG: Veritabanında {User.query.count()} kullanıcı mevcut. Otomatik kullanıcı oluşturma atlandı.")
 

@@ -24,7 +24,7 @@
         <label><input type="checkbox" name="alarm" {% if config_settings.ALARM_ENABLED %}checked{% endif %}> Alarm Aktif</label>
         <label><input type="checkbox" name="aggressive" {% if config_settings.AGGRESSIVE_MODE %}checked{% endif %}> Otomatik Müdahale</label>
 
-        {# Gelişmiş Ayarlar Başlığı ve Gizlenecek İçerik #}
+        
         <h3 id="advancedSettingsHeader" class="advanced-settings-header">Gelişmiş Ayarlar</h3>
         <div id="advancedSettingsContent" class="advanced-settings-content">
             <hr> 
@@ -68,7 +68,7 @@
 
 
         <button type="submit">Kaydet</button>
-        {# "Test Mail Gönder" butonu kaldırıldı #}
+        
         </form>
 
     {% if message %}

@@ -2,8 +2,6 @@
 
 from flask import Blueprint, request, render_template, current_app, flash
 from auth import login_required, roles_required
-
-# VERİTABANI İMPORTLARI
 from models import  Setting
 from extensions import db
 settings_routes = Blueprint("settings", __name__)

@@ -36,7 +36,7 @@ def clean_ram():
                 if proc_username == current_user:
                     try:
                         target_proc = psutil.Process(proc_pid)
-                        target_proc.terminate() # Önce nazikçe terminate
+                        target_proc.terminate() 
                         target_proc.wait(timeout=3) # 3 saniye bekle
                         killed.append(f"{proc_name} (PID: {proc_pid}) - %{proc.info['memory_percent']:.1f}")
                         log_info(f"RAM Temizle: Sonlandırıldı: {proc_name} (PID: {proc_pid}) - %{proc.info['memory_percent']:.1f}")
@@ -75,4 +75,4 @@ def clean_ram():
     if not msg_parts:
         msg_parts.append("Kapatılacak işlem yok.")
     
-    return "<br>".join(msg_parts) # HTML'e uygun şekilde birleştiriyoruz
+    return "<br>".join(msg_parts) 

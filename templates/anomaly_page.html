@@ -121,10 +121,8 @@
     }
 
     // İşlem sonlandırma fonksiyonu
-
-
     async function killProcess(event, pid) {
-    event.preventDefault(); // Formun sayfayı yenilemesini engelle
+    event.preventDefault(); 
     const form = event.target;
     const csrfToken = form.querySelector('input[name="csrf_token"]').value;
 
@@ -155,7 +153,7 @@
             }
         }
     } catch (error) {
-        // Bu hata genellikle ağ hatası veya JSON parse hatasıdır.
+        
         console.error('Kill Process isteği başarısız:', error);
         showPopup('İstek gönderilirken bir ağ hatası oluştu.', 'error');
     }

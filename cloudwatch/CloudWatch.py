@@ -11,8 +11,7 @@ import subprocess
 import os
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
-
-load_dotenv() # Bu satır .env dosyasındaki bilgileri yükler
+load_dotenv()
 
 LOG_GROUP = "SunucuPerformansLoglari"
 LOG_STREAM = "EC2_Instance_Log"
@@ -36,10 +35,10 @@ def should_send_email():
         f.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     return True
 
-# 📧 E-posta uyarı fonksiyonu
+
 # E-posta uyarı fonksiyonu
 def send_email_alert(receiver_email, subject, body):
-    sender = "losmanaydin61@gmail.com"  # Bunu da .env'den alabilirsiniz: os.getenv("SENDER_EMAIL")
+    sender = "losmanaydin61@gmail.com"
     password = os.getenv("EMAIL_SENDER_PASSWORD")
 
     if not password:
@@ -53,7 +52,7 @@ def send_email_alert(receiver_email, subject, body):
     msg['From'] = sender
     msg['To'] = receiver_email
     msg['Subject'] = subject
-    msg.attach(MIMEText(body, 'plain', _charset='utf-8')) # Hata almamak için _charset='utf-8' eklemeyi unutmayın!
+    msg.attach(MIMEText(body, 'plain', _charset='utf-8')) 
 
     try:
         with smtplib.SMTP("smtp.gmail.com", 587) as server:
@@ -64,10 +63,10 @@ def send_email_alert(receiver_email, subject, body):
     except Exception as e:
         print(f"E-posta gönderim hatası ({receiver_email}):", e)
 
-# 🔧 Yüksek CPU kullanan işlemleri bul
+# Yüksek CPU kullanan işlemleri bul
 def find_high_cpu_processes(threshold=80.0):
     result = subprocess.run(['ps', '-eo', 'pid,pcpu,comm', '--sort=-pcpu'], stdout=subprocess.PIPE)
-    output = result.stdout.decode('utf-8').splitlines()[1:]  # Başlığı atla
+    output = result.stdout.decode('utf-8').splitlines()[1:] 
     processes = []
     for line in output:
         try:

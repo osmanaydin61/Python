@@ -1,4 +1,4 @@
-# routes/logs.py (Zaman Dilimi Düzeltilmiş Hali)
+# routes/logs.py 
 
 import logging
 import os
@@ -27,7 +27,7 @@ class TimezoneFormatter(logging.Formatter):
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-# Eğer logger'a daha önce handler eklenmediyse (yeniden başlatmalarda çift logu önler)
+# Eğer logger'a daha önce handler eklenmediyse 
 if not logger.handlers:
     # Dosyaya yazacak bir handler oluştur
     file_handler = logging.FileHandler(LOG_FILE_PATH, encoding='utf-8')

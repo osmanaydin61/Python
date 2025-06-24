@@ -1,4 +1,4 @@
-# routes/anomaly.py (Nihai ve Tam Hali)
+# routes/anomaly.py 
 
 from flask import Blueprint, render_template, jsonify, flash
 import psutil
@@ -9,15 +9,12 @@ from auth import login_required, roles_required
 from utils.anomaly_detector import is_critical_process
 
 anomaly_routes = Blueprint('anomaly', __name__)
-
-# routes/anomaly.py içindeki eski anomaly_page fonksiyonunu bununla değiştirin
-
 @anomaly_routes.route('/anomali')
 @login_required
 def anomaly_page():
     """
     Veritabanından 'is_anomaly' olanları çeker ve
-    'N/A' olan ML anomalilerini filtreleyerek gösterir.
+    ML anomalilerini filtreleyerek gösterir.
     """
     try:
         anomalies_from_db = db.session.query(Metric).filter(
@@ -34,7 +31,7 @@ def anomaly_page():
             
             # PID'si olan ve hala çalışan işlemleri listeye ekle
             if anomaly.pid and psutil.pid_exists(anomaly.pid):
-                if not is_critical_process({'name': anomaly.process_name}): # Basitleştirilmiş kontrol
+                if not is_critical_process({'name': anomaly.process_name}):
                     active_anomalies.append(anomaly)
             
             # PID'si olmayan ama ML kaynaklı da olmayanları göster

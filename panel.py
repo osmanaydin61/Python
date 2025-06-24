@@ -8,12 +8,8 @@ from flask import Flask, jsonify, request, current_app
 from dotenv import load_dotenv
 import getpass
 load_dotenv()
-
-# Önce eklentileri ve modelleri import et
 from extensions import db, csrf, mail, bcrypt
 from models import Metric, Setting
-
-# Sonra diğerlerini
 from datetime import datetime, UTC
 from zoneinfo import ZoneInfo
 from auth import auth_routes, login_required, roles_required
@@ -150,7 +146,7 @@ def background_thread():
 
             except Exception as e:
                 log_error(f"Arka plan iş parçacığında kritik hata: {e}")
-                time.sleep(10) # Hata durumunda biraz daha uzun bekle
+                time.sleep(10)
 
 # İşlem sonlandırma
 @app.route("/killprocess", methods=["POST"])
